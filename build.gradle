@@ -1,0 +1,45 @@
+apply plugin: 'idea'
+apply plugin: 'java'
+
+version = '0.1'
+
+compileJava {
+	sourceCompatibility = '1.8'
+}
+
+repositories {
+	mavenCentral()
+	flatDir {
+		dirs 'libs'
+	}
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src/main/java']
+		}
+	}
+}
+
+processResources {
+	filter {
+		line ->
+		line
+		.replace('${name}', project.name)
+		.replace('${version}', project.version)
+	}
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Title': project.name,
+		           'Implementation-Version': project.version
+	}
+}
+
+dependencies {
+	compile name: 'spigot-api-1.10-R0.1-SNAPSHOT'
+}
+
+buildDir = 'bin'
