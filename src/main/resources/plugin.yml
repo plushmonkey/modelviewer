@@ -3,5 +3,5 @@ author: plushmonkey
 version: ${version}
 main: com.plushnode.modelviewer.ModelViewerPlugin
 commands:
-  modelviewer:
+  model:
     usage: /<command>
