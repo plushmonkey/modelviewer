@@ -1,16 +1,17 @@
-package com.plushnode.modelviewer;
+package com.plushnode.modelviewer.renderer;
 
+import com.plushnode.modelviewer.ModelViewerPlugin;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class DeferredRenderer implements Renderer {
     private int blocksPerTick;
-    private Queue<RenderLocation> renderQueue = new LinkedList<>();
-    private Queue<Callback> callbacks = new LinkedList<>();
+    private Queue<RenderLocation> renderQueue = new LinkedBlockingQueue<>();
+    private Queue<RenderCallback> callbacks = new LinkedBlockingQueue<>();
 
     public DeferredRenderer(ModelViewerPlugin plugin, int blocksPerTick) {
         this.blocksPerTick = blocksPerTick;
@@ -20,7 +21,7 @@ public class DeferredRenderer implements Renderer {
             public void run() {
                 if (renderQueue.isEmpty()) {
                     while (!callbacks.isEmpty()) {
-                        Callback callback = callbacks.poll();
+                        RenderCallback callback = callbacks.poll();
                         callback.onFinish();
                     }
                 }
@@ -34,7 +35,12 @@ public class DeferredRenderer implements Renderer {
         renderQueue.add(new RenderLocation(location, type));
     }
 
-    public void addCallback(Callback callback) {
+    @Override
+    public void renderBlock(Location location, int typeId, byte typeData) {
+        renderQueue.add(new RenderLocation(location, typeId, typeData));
+    }
+
+    public void addCallback(RenderCallback callback) {
         this.callbacks.add(callback);
     }
 
@@ -45,20 +51,29 @@ public class DeferredRenderer implements Renderer {
             if (current == null)
                 return;
 
-            current.location.getBlock().setType(current.type);
+            if (current.type != null) {
+                current.location.getBlock().setType(current.type, false);
+            } else {
+                current.location.getBlock().setTypeIdAndData(current.typeId, current.typeData, false);
+            }
         }
-    }
-
-    public interface Callback {
-        void onFinish();
     }
 
     private class RenderLocation {
         Location location;
-        Material type;
+        Material type = null;
+        int typeId;
+        byte typeData;
+
         RenderLocation(Location location, Material type) {
             this.location = location;
             this.type = type;
+        }
+
+        RenderLocation(Location location, int typeId, byte typeData) {
+            this.location = location;
+            this.typeId = typeId;
+            this.typeData = typeData;
         }
     }
 }
