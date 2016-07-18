@@ -3,7 +3,7 @@ package com.plushnode.modelviewer.commands;
 import com.plushnode.modelviewer.*;
 import com.plushnode.modelviewer.fbx.FBXDocument;
 import com.plushnode.modelviewer.geometry.Model;
-import com.plushnode.modelviewer.rasterizer.LineRasterizer;
+import com.plushnode.modelviewer.fill.LineTriangleFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
@@ -220,7 +220,7 @@ public class ModelCommand implements CommandExecutor {
         }
 
         Renderer renderer = new DeferredRenderer(plugin, 100);
-        ModelView view = new ModelView(model, renderer, new LineRasterizer());
+        ModelView view = new ModelView(model, renderer, new LineTriangleFiller());
 
         view.setScale(scale);
         view.setPosition(location.toVector());

@@ -3,7 +3,7 @@ package com.plushnode.modelviewer;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
-import com.plushnode.modelviewer.rasterizer.Rasterizer;
+import com.plushnode.modelviewer.fill.TriangleFiller;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
@@ -11,7 +11,6 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -29,12 +28,12 @@ public class ModelView {
     private Model model;
     private Renderer renderer;
     private Rotation rotation;
-    private Rasterizer rasterizer;
+    private TriangleFiller triangleFiller;
 
-    public ModelView(Model model, Renderer renderer, Rasterizer rasterizer) {
+    public ModelView(Model model, Renderer renderer, TriangleFiller triangleFiller) {
         this.model = model;
         this.renderer = renderer;
-        this.rasterizer = rasterizer;
+        this.triangleFiller = triangleFiller;
     }
 
     public Vector getPosition() {
@@ -135,7 +134,7 @@ public class ModelView {
                     Vector vertexB = vertices.get(face.getIndex(1)).clone().multiply(scale);
                     Vector vertexC = vertices.get(face.getIndex(2)).clone().multiply(scale);
 
-                    Set<Vector3D> toRender = rasterizer.rasterize(rotateVector(vertexA), rotateVector(vertexB), rotateVector(vertexC));
+                    Set<Vector3D> toRender = triangleFiller.fill(rotateVector(vertexA), rotateVector(vertexB), rotateVector(vertexC));
                     for (Vector3D vector : toRender) {
                         Vector3D pos = BukkitAdapter.adapt(renderPosition);
 
@@ -155,7 +154,7 @@ public class ModelView {
                 }
 
                 long msEnd = System.currentTimeMillis();
-                System.out.println("Rasterization complete (" + (msEnd - msBegin) + ")");
+                System.out.println("Filling calculated (" + (msEnd - msBegin) + "ms)");
 
                 if (callback != null)
                     renderer.addCallback(callback);

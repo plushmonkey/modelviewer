@@ -1,4 +1,4 @@
-package com.plushnode.modelviewer.rasterizer;
+package com.plushnode.modelviewer.fill;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class StandardTriangleRasterizer implements Rasterizer {
+public class StandardTriangleRasterizer implements TriangleFiller {
     private static final double JUMP = 0.1;
 
     private double clamp(double val, double min, double max) {
@@ -50,7 +50,7 @@ public class StandardTriangleRasterizer implements Rasterizer {
     }
 
     @Override
-    public Set<Vector3D> rasterize(Vector3D vertexA, Vector3D vertexB, Vector3D vertexC) {
+    public Set<Vector3D> fill(Vector3D vertexA, Vector3D vertexB, Vector3D vertexC) {
         Vector3D[] points = new Vector3D[] { vertexA, vertexB, vertexC };
 
         Arrays.sort(points, (Vector3D v1, Vector3D v2) -> {

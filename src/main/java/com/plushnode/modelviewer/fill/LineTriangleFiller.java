@@ -1,23 +1,23 @@
-package com.plushnode.modelviewer.rasterizer;
+package com.plushnode.modelviewer.fill;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class LineRasterizer implements Rasterizer {
+public class LineTriangleFiller implements TriangleFiller {
     private LineAlgorithm algorithm;
 
-    public LineRasterizer() {
+    public LineTriangleFiller() {
         this.algorithm = new InterpolateLineAlgorithm();
     }
 
-    public LineRasterizer(LineAlgorithm algorithm) {
+    public LineTriangleFiller(LineAlgorithm algorithm) {
         this.algorithm = algorithm;
     }
 
     @Override
-    public Set<Vector3D> rasterize(Vector3D vertexA, Vector3D vertexB, Vector3D vertexC) {
+    public Set<Vector3D> fill(Vector3D vertexA, Vector3D vertexB, Vector3D vertexC) {
         Set<Vector3D> result = new HashSet<>();
         Vector3D btoc = vertexC.subtract(vertexB);
         double dist = vertexB.distance(vertexC);

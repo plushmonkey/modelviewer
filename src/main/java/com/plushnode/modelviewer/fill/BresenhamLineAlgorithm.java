@@ -1,4 +1,4 @@
-package com.plushnode.modelviewer.rasterizer;
+package com.plushnode.modelviewer.fill;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 

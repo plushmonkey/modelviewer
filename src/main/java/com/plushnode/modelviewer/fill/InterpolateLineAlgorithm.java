@@ -1,4 +1,4 @@
-package com.plushnode.modelviewer.rasterizer;
+package com.plushnode.modelviewer.fill;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -14,7 +14,6 @@ public class InterpolateLineAlgorithm implements LineAlgorithm {
 
         for (double i = 0; i <= dist; ++i) {
             Vector3D interpolated = from.add(between.scalarMultiply(i / dist));
-            //Vector3D rounded = new Vector3D(Math.round(interpolated.getX()), Math.round(interpolated.getY()), Math.round(interpolated.getZ()));
 
             result.add(interpolated);
         }
