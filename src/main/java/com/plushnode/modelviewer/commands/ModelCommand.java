@@ -1,11 +1,20 @@
 package com.plushnode.modelviewer.commands;
 
 import com.plushnode.modelviewer.*;
+import com.plushnode.modelviewer.adapters.BukkitAdapter;
 import com.plushnode.modelviewer.fbx.FBXDocument;
+import com.plushnode.modelviewer.fbx.node.FBXNode;
+import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
+import com.plushnode.modelviewer.fbx.property.FBXProperty;
+import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.fill.LineTriangleFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
+import com.plushnode.modelviewer.scene.Actor;
+import com.plushnode.modelviewer.scene.BukkitSceneView;
+import com.plushnode.modelviewer.scene.Scene;
+import com.plushnode.modelviewer.util.ModelLoader;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.bukkit.Location;
@@ -16,12 +25,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ModelCommand implements CommandExecutor {
     private Map<String, Model> models = new HashMap<>();
     private ModelViewerPlugin plugin;
-    private Map<String, ModelView> history = new HashMap<>();
+    private Map<String, BukkitSceneView> history = new HashMap<>();
 
     public ModelCommand(ModelViewerPlugin plugin) {
         this.plugin = plugin;
@@ -54,7 +64,7 @@ public class ModelCommand implements CommandExecutor {
             return;
         }
 
-        ModelView view = history.get(commandSender.getName());
+        BukkitSceneView view = history.get(commandSender.getName());
         if (view == null) {
             commandSender.sendMessage("No models to change.");
             return;
@@ -84,7 +94,7 @@ public class ModelCommand implements CommandExecutor {
         view.clear();
         Player player = (Player)commandSender;
         final String setString = "Model type set to " + type + ":" + data + ".";
-        view.render(player.getWorld(), plugin, () -> {
+        view.render(player.getWorld(), () -> {
             commandSender.sendMessage(setString);
         });
     }
@@ -94,7 +104,7 @@ public class ModelCommand implements CommandExecutor {
             return;
         }
 
-        ModelView view = history.get(commandSender.getName());
+        BukkitSceneView view = history.get(commandSender.getName());
         if (view == null) {
             commandSender.sendMessage("No models to rotate");
             return;
@@ -129,17 +139,18 @@ public class ModelCommand implements CommandExecutor {
         }
 
         double rot = Math.toRadians(degrees);
-        view.rotate(new Rotation(axis, rot));
+
+        view.getScene().getTransform().rotate(new Rotation(axis, rot));
 
         view.clear();
         Player player = (Player)commandSender;
-        view.render(player.getWorld(), plugin, () -> {
+        view.render(player.getWorld(), () -> {
             commandSender.sendMessage("Model rotated.");
         });
     }
 
     private void handleScale(CommandSender commandSender, String[] args) {
-        ModelView view = history.get(commandSender.getName());
+        BukkitSceneView view = history.get(commandSender.getName());
         if (view == null) {
             commandSender.sendMessage("No models to scale");
             return;
@@ -151,7 +162,7 @@ public class ModelCommand implements CommandExecutor {
         try {
             double scale = Double.parseDouble(args[1]);
 
-            view.setScale(scale);
+            view.getScene().getTransform().setScale(scale);
         } catch (NumberFormatException e) {
             commandSender.sendMessage("Error parsing scale.");
             return;
@@ -159,21 +170,19 @@ public class ModelCommand implements CommandExecutor {
 
         view.clear();
         Player player = (Player)commandSender;
-        view.render(player.getWorld(), plugin, () -> {
-            commandSender.sendMessage("Model scale set to " + view.getScale() + ".");
+        view.render(player.getWorld(), () -> {
+            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + ".");
         });
     }
 
     private void handleReset(CommandSender commandSender, String[] args) {
-        ModelView view = history.get(commandSender.getName());
+        BukkitSceneView view = history.get(commandSender.getName());
         if (view == null) {
             commandSender.sendMessage("Nothing to reset.");
             return;
         }
 
         view.clear();
-
-        Renderer renderer = view.getRenderer();
 
         view.getRenderer().addCallback(() -> {
             commandSender.sendMessage("Model reset.");
@@ -188,11 +197,32 @@ public class ModelCommand implements CommandExecutor {
             return;
         }
 
+
+
+        /*String[] nameSplit = args[1].split(":");
         Model model = models.get(args[1]);
 
         if (model == null) {
-            FBXDocument document = this.plugin.loadFBX(args[1]);
-            model = ModelLoader.load(document);
+            String filename = nameSplit[0];
+            FBXDocument document = this.plugin.loadFBX(filename);
+            List<Model> modelList = ModelLoader.load(document);
+
+            if (modelList.isEmpty()) {
+                commandSender.sendMessage("Error loading model.");
+                return;
+            }
+
+            int index = 0;
+            if (nameSplit.length > 1) {
+                try {
+                    index = Integer.parseInt(nameSplit[1]);
+                } catch (NumberFormatException e) {
+
+                }
+            }
+
+            System.out.println("Selecting geometry number " + index);
+            model = modelList.get(index);
 
             if (model != null) {
                 this.models.put(args[1], model);
@@ -200,13 +230,7 @@ public class ModelCommand implements CommandExecutor {
                 commandSender.sendMessage("Error loading model.");
                 return;
             }
-        }
-
-        Player player = (Player)commandSender;
-        Location location = player.getLocation().clone();
-        Vector direction = location.getDirection().clone();
-
-        location.add(direction.clone().multiply(5));
+        }*/
 
         double scale = 1.0;
 
@@ -219,18 +243,49 @@ public class ModelCommand implements CommandExecutor {
             }
         }
 
+        Scene scene = new Scene();
+
+        FBXDocument document = this.plugin.loadFBX(args[1]);
+        List<Model> modelList = ModelLoader.load(document);
+
+        for (int i = 0; i < modelList.size(); ++i) {
+            Model model = modelList.get(i);
+            Actor actor = new Actor(model);
+
+            for (FBXNode node : model.getNode().getNodes()) {
+                if (node.getName().equalsIgnoreCase("Properties70")) {
+                    FBXPropertyStore properties = FBXPropertiesLoader.loadProperties(node);
+                    FBXProperty translation = properties.getProperty("Lcl Translation");
+
+                    if (translation != null) {
+                        Vector3D value = translation.getValue().asVector().scalarMultiply(1/100.0);
+
+                        actor.getTransform().setTranslation(value);
+                    }
+                }
+            }
+
+            scene.addActor(actor);
+        }
+
+        Player player = (Player)commandSender;
+
         Renderer renderer = new DeferredRenderer(plugin, 100);
-        ModelView view = new ModelView(model, renderer, new LineTriangleFiller());
 
-        view.setScale(scale);
-        view.setPosition(location.toVector());
+        translateScene(scene, BukkitAdapter.adapt(player.getLocation().toVector()), BukkitAdapter.adapt(player.getLocation().getDirection()));
+        scene.getTransform().setScale(scale);
 
-        player.sendMessage("Rendering...");
-
-        view.renderDirection(player.getWorld(), plugin, direction, () -> {
+        BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LineTriangleFiller());
+        view.render(player.getWorld(), () -> {
             player.sendMessage("Rendered.");
         });
 
         history.put(player.getName(), view);
+    }
+
+    private void translateScene(Scene scene, Vector3D position, Vector3D direction) {
+        Vector3D translation = position.add(direction.scalarMultiply(5)).add(scene.getSize());
+
+        scene.getTransform().setTranslation(translation);
     }
 }

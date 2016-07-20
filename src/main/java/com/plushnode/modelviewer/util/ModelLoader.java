@@ -62,6 +62,22 @@ public class ModelLoader {
         }
     }
 
+    private static List<FBXNode> getMeshModels(List<FBXNode> models) {
+        List<FBXNode> meshes = new ArrayList<>();
+
+        for (FBXNode model : models) {
+            List<FBXNodeProperty> nodeProperties = model.getProperties();
+
+            if (nodeProperties.size() < 3) continue;
+
+            String type = nodeProperties.get(2).getString();
+
+            if (type.equalsIgnoreCase("mesh"))
+                meshes.add(model);
+        }
+        return meshes;
+    }
+
     public static List<Model> load(FBXDocument document) {
         //displayDocumentNodes(document);
         FBXNode objectNode = document.getNode("Objects");
@@ -73,12 +89,14 @@ public class ModelLoader {
         List<FBXNode> geometryNodes = objectNode.getNodes("Geometry");
         List<FBXNode> modelNodes = objectNode.getNodes("Model");
 
+        List<FBXNode> meshNodes = getMeshModels(objectNode.getNodes("Model"));
+
         List<Model> models = new ArrayList<>();
 
         for (int i = 0; i < geometryNodes.size(); ++i) {
             FBXNode geometry = geometryNodes.get(i);
 
-            Model model = new Model();
+            Model model = new Model(meshNodes.get(models.size()));
 
             FBXNode vertexNode = geometry.getNode("Vertices");
             if (vertexNode == null) continue;
@@ -103,7 +121,7 @@ public class ModelLoader {
 
             int faceSize = getMaxFaceSize(indices);
             if (faceSize > 3) {
-                System.out.println("Found face with " + " vertices");
+                System.out.println("Found face with " + faceSize + " vertices");
                 continue;
             }
 
