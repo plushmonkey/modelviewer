@@ -1,7 +1,9 @@
 package com.plushnode.modelviewer.fbx.io;
 
 import com.plushnode.modelviewer.fbx.FBXDocument;
-import com.plushnode.modelviewer.fbx.FBXNode;
+import com.plushnode.modelviewer.fbx.node.FBXNode;
+import com.plushnode.modelviewer.fbx.node.FBXNodeProperty;
+import com.plushnode.modelviewer.fbx.node.FBXNodePropertyType;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -93,35 +95,33 @@ public class FBXBinaryReader {
         return node;
     }
 
-    private Object readProperty() throws IOException {
+    private FBXNodeProperty readProperty() throws IOException {
         byte typeCode = buffer.get();
         char c = (char)(typeCode & 0xFF);
         switch (c) {
             case 'Y':
-                return buffer.getShort();
+                return new FBXNodeProperty(buffer.getShort(), FBXNodePropertyType.SHORT);
             case 'C':
-                return buffer.get() != 1;
+                return new FBXNodeProperty(buffer.get() != 1, FBXNodePropertyType.BOOLEAN);
             case 'I':
-                return buffer.getInt();
+                return new FBXNodeProperty(buffer.getInt(), FBXNodePropertyType.INTEGER);
             case 'F':
-                return buffer.getFloat();
+                return new FBXNodeProperty(buffer.getFloat(), FBXNodePropertyType.FLOAT);
             case 'D':
-                return buffer.getDouble();
+                return new FBXNodeProperty(buffer.getDouble(), FBXNodePropertyType.DOUBLE);
             case 'L':
-                return buffer.getLong();
+                return new FBXNodeProperty(buffer.getLong(), FBXNodePropertyType.LONG);
 
             case 'f':
-                return readArray(Float.class, Float.BYTES, ByteBuffer::getFloat);
-            case 'd': {
-                List<Object> arr = readArray(Double.class, Double.BYTES, ByteBuffer::getDouble);
-                return arr;
-            }
+                return new FBXNodeProperty(readArray(Float.class, Float.BYTES, ByteBuffer::getFloat), FBXNodePropertyType.FLOAT_LIST);
+            case 'd':
+                return new FBXNodeProperty(readArray(Double.class, Double.BYTES, ByteBuffer::getDouble), FBXNodePropertyType.DOUBLE_LIST);
             case 'l':
-                return readArray(Long.class, Long.BYTES, ByteBuffer::getLong);
+                return new FBXNodeProperty(readArray(Long.class, Long.BYTES, ByteBuffer::getLong), FBXNodePropertyType.LONG_LIST);
             case 'i':
-                return readArray(Integer.class, Integer.BYTES, ByteBuffer::getInt);
+                return new FBXNodeProperty(readArray(Integer.class, Integer.BYTES, ByteBuffer::getInt), FBXNodePropertyType.INTEGER_LIST);
             case 'b':
-                return readArray(Byte.class, 1, ByteBuffer::get);
+                return new FBXNodeProperty(readArray(Byte.class, 1, ByteBuffer::get), FBXNodePropertyType.BYTE_LIST);
 
             case 'S':
             case 'R':
@@ -129,7 +129,8 @@ public class FBXBinaryReader {
                 int length = buffer.getInt();
                 byte[] bytes = new byte[length];
                 read(bytes);
-                return bytes;
+
+                return new FBXNodeProperty(new String(bytes, "US-ASCII"), FBXNodePropertyType.STRING);
             }
         }
 

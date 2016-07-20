@@ -1,10 +1,12 @@
 package com.plushnode.modelviewer.fbx;
 
-import java.util.Collection;
+import com.plushnode.modelviewer.fbx.node.FBXNode;
+import com.plushnode.modelviewer.fbx.node.FBXNodeContainer;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class FBXDocument {
+public class FBXDocument extends FBXNodeContainer {
     private int version;
     private Map<String, FBXNode> nodes;
 
@@ -17,15 +19,5 @@ public class FBXDocument {
         return version;
     }
 
-    public FBXNode getNode(String name) {
-        return nodes.get(name);
-    }
 
-    public Collection<FBXNode> getNodes() {
-        return nodes.values();
-    }
-
-    public void addNode(FBXNode node) {
-        nodes.put(node.getName(), node);
-    }
 }
