@@ -11,12 +11,11 @@ import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.fill.LineTriangleFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
-import com.plushnode.modelviewer.scene.Actor;
-import com.plushnode.modelviewer.scene.BukkitSceneView;
-import com.plushnode.modelviewer.scene.Scene;
+import com.plushnode.modelviewer.scene.*;
 import com.plushnode.modelviewer.util.ModelLoader;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.linear.RealVector;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -170,8 +169,11 @@ public class ModelCommand implements CommandExecutor {
 
         view.clear();
         Player player = (Player)commandSender;
+
+        final long begin = System.currentTimeMillis();
+
         view.render(player.getWorld(), () -> {
-            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + ".");
+            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + " in " + (System.currentTimeMillis() - begin) + "ms.");
         });
     }
 
@@ -197,41 +199,6 @@ public class ModelCommand implements CommandExecutor {
             return;
         }
 
-
-
-        /*String[] nameSplit = args[1].split(":");
-        Model model = models.get(args[1]);
-
-        if (model == null) {
-            String filename = nameSplit[0];
-            FBXDocument document = this.plugin.loadFBX(filename);
-            List<Model> modelList = ModelLoader.load(document);
-
-            if (modelList.isEmpty()) {
-                commandSender.sendMessage("Error loading model.");
-                return;
-            }
-
-            int index = 0;
-            if (nameSplit.length > 1) {
-                try {
-                    index = Integer.parseInt(nameSplit[1]);
-                } catch (NumberFormatException e) {
-
-                }
-            }
-
-            System.out.println("Selecting geometry number " + index);
-            model = modelList.get(index);
-
-            if (model != null) {
-                this.models.put(args[1], model);
-            } else {
-                commandSender.sendMessage("Error loading model.");
-                return;
-            }
-        }*/
-
         double scale = 1.0;
 
         if (args.length > 2) {
@@ -243,29 +210,18 @@ public class ModelCommand implements CommandExecutor {
             }
         }
 
-        Scene scene = new Scene();
+        SceneNode scene = new SceneNode(null, new Transform());
 
         FBXDocument document = this.plugin.loadFBX(args[1]);
         List<Model> modelList = ModelLoader.load(document);
 
         for (int i = 0; i < modelList.size(); ++i) {
             Model model = modelList.get(i);
-            Actor actor = new Actor(model);
+            SceneNode node = new SceneNode(model, new Transform());
 
-            for (FBXNode node : model.getNode().getNodes()) {
-                if (node.getName().equalsIgnoreCase("Properties70")) {
-                    FBXPropertyStore properties = FBXPropertiesLoader.loadProperties(node);
-                    FBXProperty translation = properties.getProperty("Lcl Translation");
+            transformNode(node);
 
-                    if (translation != null) {
-                        Vector3D value = translation.getValue().asVector().scalarMultiply(1/100.0);
-
-                        actor.getTransform().setTranslation(value);
-                    }
-                }
-            }
-
-            scene.addActor(actor);
+            scene.addChild(node);
         }
 
         Player player = (Player)commandSender;
@@ -275,15 +231,59 @@ public class ModelCommand implements CommandExecutor {
         translateScene(scene, BukkitAdapter.adapt(player.getLocation().toVector()), BukkitAdapter.adapt(player.getLocation().getDirection()));
         scene.getTransform().setScale(scale);
 
+        final long begin = System.currentTimeMillis();
+
         BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LineTriangleFiller());
         view.render(player.getWorld(), () -> {
-            player.sendMessage("Rendered.");
+            player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms.");
         });
 
         history.put(player.getName(), view);
     }
 
-    private void translateScene(Scene scene, Vector3D position, Vector3D direction) {
+    private void transformNode(SceneNode sceneNode) {
+        Rotation xRot = new Rotation(Vector3D.PLUS_I, 0);
+        Rotation yRot = new Rotation(Vector3D.PLUS_J, 0);
+        Rotation zRot = new Rotation(Vector3D.PLUS_K, 0);
+
+        Vector3D modelTranslation = Vector3D.ZERO;
+        Vector3D modelScaling = new Vector3D(1, 1, 1);
+
+        for (FBXNode node : sceneNode.getModel().getNode().getNodes()) {
+            if (node.getName().equalsIgnoreCase("Properties70")) {
+                FBXPropertyStore properties = FBXPropertiesLoader.loadProperties(node);
+                FBXProperty translation = properties.getProperty("Lcl Translation");
+                FBXProperty scaling = properties.getProperty("Lcl Scaling");
+                FBXProperty rotation = properties.getProperty("Lcl Rotation");
+
+                if (scaling != null) {
+                    modelScaling = scaling.getValue().asVector();
+                }
+
+                if (translation != null) {
+                    modelTranslation = translation.getValue().asVector();
+                }
+
+                if (rotation != null) {
+                    Vector3D value = rotation.getValue().asVector();
+
+                    /*xRot = new Rotation(Vector3D.PLUS_I, value.getX());
+                    yRot = new Rotation(Vector3D.PLUS_J, value.getY());
+                    zRot = new Rotation(Vector3D.PLUS_K, value.getZ());*/
+                }
+            }
+        }
+
+        modelTranslation = modelTranslation.scalarMultiply(1/100.0);
+
+        sceneNode.getTransform().setTranslation(modelTranslation);
+
+        sceneNode.getTransform().rotate(xRot);
+        sceneNode.getTransform().rotate(yRot);
+        sceneNode.getTransform().rotate(zRot);
+    }
+
+    private void translateScene(SceneNode scene, Vector3D position, Vector3D direction) {
         Vector3D translation = position.add(direction.scalarMultiply(5)).add(scene.getSize());
 
         scene.getTransform().setTranslation(translation);

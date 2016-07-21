@@ -5,9 +5,12 @@ import com.plushnode.modelviewer.adapters.BukkitAdapter;
 import com.plushnode.modelviewer.fill.TriangleFiller;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
+import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -19,14 +22,14 @@ import java.util.Set;
 
 public class BukkitSceneView {
     private ModelViewerPlugin plugin;
-    private Scene scene;
+    private SceneNode scene;
     private Renderer renderer;
     private TriangleFiller filler;
     private Set<Location> affectedBlocks = new HashSet<>();
     private int typeId = 1;
     private int typeData = 0;
 
-    public BukkitSceneView(ModelViewerPlugin plugin, Scene scene, Renderer renderer, TriangleFiller filler) {
+    public BukkitSceneView(ModelViewerPlugin plugin, SceneNode scene, Renderer renderer, TriangleFiller filler) {
         this.plugin = plugin;
         this.scene = scene;
         this.renderer = renderer;
@@ -38,7 +41,7 @@ public class BukkitSceneView {
         this.typeData = typeData;
     }
 
-    public Scene getScene() {
+    public SceneNode getScene() {
         return this.scene;
     }
 
@@ -57,62 +60,63 @@ public class BukkitSceneView {
         render(world, null);
     }
 
-    public void render(World world, RenderCallback callback) {
-        Transform sceneTransform = scene.getTransform();
+    public void renderNode(World world, SceneNode node, RealMatrix transform) {
+        RealMatrix resultTransform = transform.multiply(node.getTransform().getMatrix());
 
-        System.out.println("Rendering scene at " + sceneTransform.getTranslation());
+        Model model = node.getModel();
 
-        for (Actor actor : scene.getActors()) {
-            Transform actorTransform = actor.getTransform();
-            Model model = actor.getModel();
-
+        if (model != null) {
             List<Face> faces = model.getFaces();
             List<Vector3D> vertices = model.getVertices();
-            long msBegin = System.currentTimeMillis();
-            new BukkitRunnable() {
-                public void run() {
-                    for (int i = 0; i < faces.size(); ++i) {
-                        Face face = faces.get(i);
 
-                        Vector3D vertexA = vertices.get(face.getIndex(0));
-                        Vector3D vertexB = vertices.get(face.getIndex(1));
-                        Vector3D vertexC = vertices.get(face.getIndex(2));
+            for (int i = 0; i < faces.size(); ++i) {
+                Face face = faces.get(i);
 
-                        // Apply model transforms
-                        vertexA = actorTransform.getRotation().applyTo(vertexA).scalarMultiply(actorTransform.getScale()).add(actorTransform.getTranslation());
-                        vertexB = actorTransform.getRotation().applyTo(vertexB).scalarMultiply(actorTransform.getScale()).add(actorTransform.getTranslation());
-                        vertexC = actorTransform.getRotation().applyTo(vertexC).scalarMultiply(actorTransform.getScale()).add(actorTransform.getTranslation());
+                Vector3D vertexA = vertices.get(face.getIndex(0));
+                Vector3D vertexB = vertices.get(face.getIndex(1));
+                Vector3D vertexC = vertices.get(face.getIndex(2));
 
-                        // Apply scene transforms
-                        vertexA = sceneTransform.getRotation().applyTo(vertexA).scalarMultiply(sceneTransform.getScale()).add(sceneTransform.getTranslation());
-                        vertexB = sceneTransform.getRotation().applyTo(vertexB).scalarMultiply(sceneTransform.getScale()).add(sceneTransform.getTranslation());
-                        vertexC = sceneTransform.getRotation().applyTo(vertexC).scalarMultiply(sceneTransform.getScale()).add(sceneTransform.getTranslation());
+                vertexA = VectorUtils.multiply(resultTransform, vertexA);
+                vertexB = VectorUtils.multiply(resultTransform, vertexB);
+                vertexC = VectorUtils.multiply(resultTransform, vertexC);
 
+                Set<Vector3D> toRender = filler.fill(vertexA, vertexB, vertexC);
 
-                        Set<Vector3D> toRender = filler.fill(vertexA, vertexB, vertexC);
-                        for (Vector3D vector : toRender) {
-                            Vector3D roundedVector = new Vector3D(
-                                    Math.round(vector.getX()),
-                                    Math.round(vector.getY()),
-                                    Math.round(vector.getZ()));
+                for (Vector3D vector : toRender) {
+                    Vector3D roundedVector = new Vector3D(
+                            Math.round(vector.getX()),
+                            Math.round(vector.getY()),
+                            Math.round(vector.getZ()));
 
-                            Location roundedLocation = BukkitAdapter.adapt(roundedVector, world);
+                    Location roundedLocation = BukkitAdapter.adapt(roundedVector, world);
 
-                            if (affectedBlocks.contains(roundedLocation)) continue;
+                    if (affectedBlocks.contains(roundedLocation)) continue;
 
-                            affectedBlocks.add(roundedLocation);
+                    affectedBlocks.add(roundedLocation);
 
-                            renderer.renderBlock(roundedLocation, typeId, (byte)typeData);
-                        }
-                    }
-
-                    long msEnd = System.currentTimeMillis();
-                    System.out.println("Filling calculated (" + (msEnd - msBegin) + "ms)");
-
-                    if (callback != null)
-                        renderer.addCallback(callback);
+                    renderer.renderBlock(roundedLocation, typeId, (byte) typeData);
                 }
-            }.runTaskAsynchronously(plugin);
+            }
         }
+
+        for (SceneNode subNode : node.getChildren())
+            renderNode(world, subNode, resultTransform);
+    }
+
+    public void render(World world, RenderCallback callback) {
+        new BukkitRunnable() {
+            public void run() {
+                long msBegin = System.currentTimeMillis();
+
+                renderNode(world, scene, MatrixUtils.createRealIdentityMatrix(4));
+
+                long msEnd = System.currentTimeMillis();
+
+                System.out.println("Filling calculated (" + (msEnd - msBegin) + "ms)");
+
+                if (callback != null)
+                    renderer.addCallback(callback);
+            }
+        }.runTaskAsynchronously(plugin);
     }
 }
