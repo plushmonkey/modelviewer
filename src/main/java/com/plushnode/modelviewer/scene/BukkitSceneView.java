@@ -50,6 +50,10 @@ public class BukkitSceneView {
         return this.renderer;
     }
 
+    public int getBlockCount() {
+        return this.affectedBlocks.size();
+    }
+
     public void clear() {
         for (Location location : this.affectedBlocks) {
             renderer.renderBlock(location, Material.AIR);

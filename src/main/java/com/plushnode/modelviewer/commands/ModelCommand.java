@@ -142,7 +142,7 @@ public class ModelCommand implements CommandExecutor {
         view.clear();
         Player player = (Player)commandSender;
         view.render(player.getWorld(), () -> {
-            commandSender.sendMessage("Model rotated.");
+            commandSender.sendMessage("Model rotated. (" + view.getBlockCount() + " blocks)");
         });
     }
 
@@ -171,7 +171,7 @@ public class ModelCommand implements CommandExecutor {
         final long begin = System.currentTimeMillis();
 
         view.render(player.getWorld(), () -> {
-            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + " in " + (System.currentTimeMillis() - begin) + "ms.");
+            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + " in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
         });
     }
 
@@ -217,6 +217,12 @@ public class ModelCommand implements CommandExecutor {
             @Override
             public void run() {
                 FBXDocument document = plugin.loadFBX(args[1]);
+
+                if (document == null) {
+                    player.sendMessage("Could not find scene file.");
+                    return;
+                }
+
                 List<Model> modelList = ModelLoader.load(document);
                 SceneNode scene = new SceneNode(null, new Transform());
 
@@ -238,7 +244,7 @@ public class ModelCommand implements CommandExecutor {
 
                 BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LinePolygonFiller());
                 view.render(world, () -> {
-                    player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms.");
+                    player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
                 });
 
                 history.put(player.getName(), view);
