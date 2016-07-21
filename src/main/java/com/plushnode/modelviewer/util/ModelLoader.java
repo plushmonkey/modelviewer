@@ -78,6 +78,24 @@ public class ModelLoader {
         return meshes;
     }
 
+    private static List<Face> getFacesFromIndices(List<Integer> indices) {
+        List<Face> faces = new ArrayList<>();
+        Face face = new Face();
+
+        for (int i = 0; i < indices.size(); ++i) {
+            int index = indices.get(i);
+            if (index < 0) {
+                face.addIndex(~index);
+                faces.add(face);
+                face = new Face();
+            } else {
+                face.addIndex(index);
+            }
+        }
+
+        return faces;
+    }
+
     public static List<Model> load(FBXDocument document) {
         //displayDocumentNodes(document);
         FBXNode objectNode = document.getNode("Objects");
@@ -120,16 +138,14 @@ public class ModelLoader {
             List<Integer> indices = indicesProperties.get(0).getIntList();
 
             int faceSize = getMaxFaceSize(indices);
-            if (faceSize > 3) {
+            if (faceSize > 4) {
                 System.out.println("Found face with " + faceSize + " vertices");
                 continue;
             }
 
-            for (int j = 0; j < indices.size(); j += 3) {
-                Face face = new Face(indices.get(j), indices.get(j + 1), ~indices.get(j + 2));
+            List<Face> faces = getFacesFromIndices(indices);
 
-                model.addFace(face);
-            }
+            faces.forEach((Face face) -> model.addFace(face));
 
             models.add(model);
         }

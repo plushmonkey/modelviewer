@@ -1,16 +1,21 @@
 package com.plushnode.modelviewer.geometry;
 
+import java.util.ArrayList;
+import java.util.List;
+
 // Stores indices
 public class Face {
-    private int[] indices = new int[3];
+    private List<Integer> indices = new ArrayList<>();
 
-    public Face(int index1, int index2, int index3) {
-        this.indices[0] = index1;
-        this.indices[1] = index2;
-        this.indices[2] = index3;
+    public void addIndex(int index) {
+        this.indices.add(index);
+    }
+
+    public int getSize() {
+        return indices.size();
     }
 
     public int getIndex(int num) {
-        return indices[num];
+        return indices.get(num);
     }
 }

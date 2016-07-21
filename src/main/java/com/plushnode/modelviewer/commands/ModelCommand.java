@@ -8,24 +8,20 @@ import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
 import com.plushnode.modelviewer.fbx.property.FBXProperty;
 import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.geometry.Model;
-import com.plushnode.modelviewer.fill.LineTriangleFiller;
+import com.plushnode.modelviewer.fill.LinePolygonFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
 import com.plushnode.modelviewer.util.ModelLoader;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.linear.RealVector;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -240,7 +236,7 @@ public class ModelCommand implements CommandExecutor {
 
                 final long begin = System.currentTimeMillis();
 
-                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LineTriangleFiller());
+                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LinePolygonFiller());
                 view.render(world, () -> {
                     player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms.");
                 });

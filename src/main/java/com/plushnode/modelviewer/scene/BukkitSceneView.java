@@ -2,7 +2,7 @@ package com.plushnode.modelviewer.scene;
 
 import com.plushnode.modelviewer.ModelViewerPlugin;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
-import com.plushnode.modelviewer.fill.TriangleFiller;
+import com.plushnode.modelviewer.fill.PolygonFiller;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.math.VectorUtils;
@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,12 +25,12 @@ public class BukkitSceneView {
     private ModelViewerPlugin plugin;
     private SceneNode scene;
     private Renderer renderer;
-    private TriangleFiller filler;
+    private PolygonFiller filler;
     private Set<Location> affectedBlocks = new HashSet<>();
     private int typeId = 1;
     private int typeData = 0;
 
-    public BukkitSceneView(ModelViewerPlugin plugin, SceneNode scene, Renderer renderer, TriangleFiller filler) {
+    public BukkitSceneView(ModelViewerPlugin plugin, SceneNode scene, Renderer renderer, PolygonFiller filler) {
         this.plugin = plugin;
         this.scene = scene;
         this.renderer = renderer;
@@ -69,18 +70,25 @@ public class BukkitSceneView {
             List<Face> faces = model.getFaces();
             List<Vector3D> vertices = model.getVertices();
 
+            List<Vector3D> transformedVertices = new ArrayList<>(vertices.size());
+
+            for (int i = 0; i < vertices.size(); ++i) {
+                Vector3D vertex = vertices.get(i);
+                vertex = VectorUtils.multiply(resultTransform, vertex);
+                transformedVertices.add(vertex);
+            }
+
             for (int i = 0; i < faces.size(); ++i) {
                 Face face = faces.get(i);
 
-                Vector3D vertexA = vertices.get(face.getIndex(0));
-                Vector3D vertexB = vertices.get(face.getIndex(1));
-                Vector3D vertexC = vertices.get(face.getIndex(2));
+                List<Vector3D> faceVertices = new ArrayList<>(face.getSize());
 
-                vertexA = VectorUtils.multiply(resultTransform, vertexA);
-                vertexB = VectorUtils.multiply(resultTransform, vertexB);
-                vertexC = VectorUtils.multiply(resultTransform, vertexC);
+                for (int j = 0; j < face.getSize(); ++j) {
+                    Vector3D vertex = transformedVertices.get(face.getIndex(j));
+                    faceVertices.add(vertex);
+                }
 
-                Set<Vector3D> toRender = filler.fill(vertexA, vertexB, vertexC);
+                Set<Vector3D> toRender = filler.fill(faceVertices);
 
                 for (Vector3D vector : toRender) {
                     Vector3D roundedVector = new Vector3D(
