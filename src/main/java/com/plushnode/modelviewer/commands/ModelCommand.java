@@ -17,20 +17,22 @@ import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.RealVector;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModelCommand implements CommandExecutor {
-    private Map<String, Model> models = new HashMap<>();
     private ModelViewerPlugin plugin;
-    private Map<String, BukkitSceneView> history = new HashMap<>();
+    private Map<String, BukkitSceneView> history = new ConcurrentHashMap<>();
 
     public ModelCommand(ModelViewerPlugin plugin) {
         this.plugin = plugin;
@@ -191,6 +193,14 @@ public class ModelCommand implements CommandExecutor {
         });
     }
 
+    private double parseDouble(String str, double def) {
+        try {
+            return Double.parseDouble(str);
+        } catch (NumberFormatException e) {
+            return def;
+        }
+    }
+
     private void handleDisplay(CommandSender commandSender, String[] args) {
         if (!(commandSender instanceof Player))
             return;
@@ -199,46 +209,45 @@ public class ModelCommand implements CommandExecutor {
             return;
         }
 
-        double scale = 1.0;
+        final double scale = (args.length > 2) ? parseDouble(args[2], 1.0) : 1.0;
+        final Player player = (Player)commandSender;
+        final Vector3D position = BukkitAdapter.adapt(player.getLocation().toVector());
+        final Vector3D direction = BukkitAdapter.adapt(player.getLocation().getDirection());
+        final World world = player.getWorld();
 
-        if (args.length > 2) {
-            try {
-                scale = Double.parseDouble(args[2]);
-            } catch (NumberFormatException e) {
-                commandSender.sendMessage("Error parsing size.");
-                return;
+        player.sendMessage("Loading and rendering scene...");
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                FBXDocument document = plugin.loadFBX(args[1]);
+                List<Model> modelList = ModelLoader.load(document);
+                SceneNode scene = new SceneNode(null, new Transform());
+
+                for (int i = 0; i < modelList.size(); ++i) {
+                    Model model = modelList.get(i);
+                    SceneNode node = new SceneNode(model, new Transform());
+
+                    transformNode(node);
+
+                    scene.addChild(node);
+                }
+
+                Renderer renderer = new DeferredRenderer(plugin, 100);
+
+                translateScene(scene, position, direction);
+                scene.getTransform().setScale(scale);
+
+                final long begin = System.currentTimeMillis();
+
+                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LineTriangleFiller());
+                view.render(world, () -> {
+                    player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms.");
+                });
+
+                history.put(player.getName(), view);
             }
-        }
-
-        SceneNode scene = new SceneNode(null, new Transform());
-
-        FBXDocument document = this.plugin.loadFBX(args[1]);
-        List<Model> modelList = ModelLoader.load(document);
-
-        for (int i = 0; i < modelList.size(); ++i) {
-            Model model = modelList.get(i);
-            SceneNode node = new SceneNode(model, new Transform());
-
-            transformNode(node);
-
-            scene.addChild(node);
-        }
-
-        Player player = (Player)commandSender;
-
-        Renderer renderer = new DeferredRenderer(plugin, 100);
-
-        translateScene(scene, BukkitAdapter.adapt(player.getLocation().toVector()), BukkitAdapter.adapt(player.getLocation().getDirection()));
-        scene.getTransform().setScale(scale);
-
-        final long begin = System.currentTimeMillis();
-
-        BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LineTriangleFiller());
-        view.render(player.getWorld(), () -> {
-            player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms.");
-        });
-
-        history.put(player.getName(), view);
+        }.runTaskAsynchronously(this.plugin);
     }
 
     private void transformNode(SceneNode sceneNode) {

@@ -11,11 +11,14 @@ public class Transform {
     private double scale;
     private Rotation rotation;
     private Vector3D translation;
+    private RealMatrix matrix;
+    private boolean dirty = true;
 
     public Transform() {
         this.scale = 1.0;
         this.rotation = Rotation.IDENTITY;
         this.translation = Vector3D.ZERO;
+        this.matrix = MatrixUtils.createRealIdentityMatrix(4);
     }
 
     public double getScale() {
@@ -32,9 +35,11 @@ public class Transform {
 
     public void setScale(double scale) {
         this.scale = scale;
+        this.dirty = true;
     }
 
     public void rotate(Rotation rotation) {
+        this.dirty = true;
         if (this.rotation == null) {
             this.rotation = rotation;
         } else {
@@ -45,14 +50,17 @@ public class Transform {
     // Sets the absolute rotation
     public void setRotation(Rotation rotation) {
         this.rotation = rotation;
+        this.dirty = true;
     }
 
     public void translate(Vector3D amount) {
         this.translation = this.translation.add(amount);
+        this.dirty = true;
     }
 
     public void setTranslation(Vector3D translation) {
         this.translation = translation;
+        this.dirty = true;
     }
 
     public RealMatrix getScaleMatrix() {
@@ -82,7 +90,11 @@ public class Transform {
     }
 
     public RealMatrix getMatrix() {
-        return getTranslationMatrix().multiply(getRotationMatrix().multiply(getScaleMatrix()));
+        if (dirty) {
+            this.matrix = getTranslationMatrix().multiply(getRotationMatrix().multiply(getScaleMatrix()));
+            dirty = false;
+        }
+        return this.matrix;
     }
 
     public Transform applyTo(Transform transform) {
