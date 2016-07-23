@@ -70,6 +70,8 @@ public class BukkitSceneView {
 
         Model model = node.getModel();
 
+        System.out.println("Rendering " + node.getName());
+
         if (model != null) {
             List<Face> faces = model.getFaces();
             List<Vector3D> vertices = model.getVertices();

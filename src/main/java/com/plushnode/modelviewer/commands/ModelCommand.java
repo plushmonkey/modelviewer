@@ -3,16 +3,11 @@ package com.plushnode.modelviewer.commands;
 import com.plushnode.modelviewer.*;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
 import com.plushnode.modelviewer.fbx.FBXDocument;
-import com.plushnode.modelviewer.fbx.node.FBXNode;
-import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
-import com.plushnode.modelviewer.fbx.property.FBXProperty;
-import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
-import com.plushnode.modelviewer.geometry.Model;
+import com.plushnode.modelviewer.fbx.FBXSceneCreator;
 import com.plushnode.modelviewer.fill.LinePolygonFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
-import com.plushnode.modelviewer.util.ModelLoader;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.bukkit.World;
@@ -22,7 +17,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -223,25 +217,16 @@ public class ModelCommand implements CommandExecutor {
                     return;
                 }
 
-                List<Model> modelList = ModelLoader.load(document);
-                SceneNode scene = new SceneNode(null, new Transform());
+                SceneCreator sceneCreator = new FBXSceneCreator(document);
 
-                for (int i = 0; i < modelList.size(); ++i) {
-                    Model model = modelList.get(i);
-                    SceneNode node = new SceneNode(model, new Transform());
-
-                    transformNode(node);
-
-                    scene.addChild(node);
-                }
-
-                Renderer renderer = new DeferredRenderer(plugin, 100);
+                SceneNode scene = sceneCreator.createScene();
 
                 translateScene(scene, position, direction);
                 scene.getTransform().setScale(scale);
 
                 final long begin = System.currentTimeMillis();
 
+                Renderer renderer = new DeferredRenderer(plugin, 100);
                 BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LinePolygonFiller());
                 view.render(world, () -> {
                     player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
@@ -250,48 +235,6 @@ public class ModelCommand implements CommandExecutor {
                 history.put(player.getName(), view);
             }
         }.runTaskAsynchronously(this.plugin);
-    }
-
-    private void transformNode(SceneNode sceneNode) {
-        Rotation xRot = new Rotation(Vector3D.PLUS_I, 0);
-        Rotation yRot = new Rotation(Vector3D.PLUS_J, 0);
-        Rotation zRot = new Rotation(Vector3D.PLUS_K, 0);
-
-        Vector3D modelTranslation = Vector3D.ZERO;
-        Vector3D modelScaling = new Vector3D(1, 1, 1);
-
-        for (FBXNode node : sceneNode.getModel().getNode().getNodes()) {
-            if (node.getName().equalsIgnoreCase("Properties70")) {
-                FBXPropertyStore properties = FBXPropertiesLoader.loadProperties(node);
-                FBXProperty translation = properties.getProperty("Lcl Translation");
-                FBXProperty scaling = properties.getProperty("Lcl Scaling");
-                FBXProperty rotation = properties.getProperty("Lcl Rotation");
-
-                if (scaling != null) {
-                    modelScaling = scaling.getValue().asVector();
-                }
-
-                if (translation != null) {
-                    modelTranslation = translation.getValue().asVector();
-                }
-
-                if (rotation != null) {
-                    Vector3D value = rotation.getValue().asVector();
-
-                    /*xRot = new Rotation(Vector3D.PLUS_I, value.getX());
-                    yRot = new Rotation(Vector3D.PLUS_J, value.getY());
-                    zRot = new Rotation(Vector3D.PLUS_K, value.getZ());*/
-                }
-            }
-        }
-
-        modelTranslation = modelTranslation.scalarMultiply(1/100.0);
-
-        sceneNode.getTransform().setTranslation(modelTranslation);
-
-        sceneNode.getTransform().rotate(xRot);
-        sceneNode.getTransform().rotate(yRot);
-        sceneNode.getTransform().rotate(zRot);
     }
 
     private void translateScene(SceneNode scene, Vector3D position, Vector3D direction) {

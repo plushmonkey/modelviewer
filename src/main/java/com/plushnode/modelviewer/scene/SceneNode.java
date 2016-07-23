@@ -1,5 +1,6 @@
 package com.plushnode.modelviewer.scene;
 
+import com.plushnode.modelviewer.fbx.node.FBXNode;
 import com.plushnode.modelviewer.geometry.Model;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -7,13 +8,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SceneNode {
+    private String name;
     private Model model;
     private Transform transform;
     private List<SceneNode> children = new ArrayList<>();
+    private long id;
 
     public SceneNode(Model model, Transform transform) {
         this.model = model;
         this.transform = transform;
+
+        FBXNode node = this.model.getNode();
+
+        this.name = node.getProperties().get(1).getString();
+    }
+
+    public SceneNode(String name, Model model, Transform transform) {
+        this.model = model;
+        this.transform = transform;
+        this.name = name;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Model getModel() {
@@ -30,6 +55,31 @@ public class SceneNode {
 
     public List<SceneNode> getChildren() {
         return children;
+    }
+
+    public SceneNode getNodeById(long id) {
+        if (this.id == id) return this;
+
+        for (SceneNode child : children) {
+            if (child.getId() == id) return child;
+            return child.getNodeById(id);
+        }
+
+        return null;
+    }
+
+    public SceneNode getNodeByName(String name) {
+        if (this.getName().equals(name))
+            return this;
+
+        for (SceneNode child : children) {
+            if (child.getName().equals(name))
+                return child;
+
+            return child.getNodeByName(name);
+        }
+
+        return null;
     }
 
     public Vector3D getSize() {

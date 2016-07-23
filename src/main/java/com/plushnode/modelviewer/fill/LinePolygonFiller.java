@@ -21,7 +21,7 @@ public class LinePolygonFiller implements PolygonFiller {
     public Set<Vector3D> fill(List<Vector3D> vertices) {
         Set<Vector3D> result = new HashSet<>();
 
-        if (vertices.size() < 3 || vertices.size() > 4) return result;
+        if (vertices.isEmpty()) return result;
 
         Vector3D pivot = vertices.get(0);
 
