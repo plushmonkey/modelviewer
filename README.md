@@ -1,13 +1,14 @@
 # Installation  
 Put the models in plugins/modelviewer/ folder. It only supports fbx at the moment.  
-The models must be triangulated. 
+Poses aren't supported.
 
 # Usage  
 Use /model d [name] &lt;scale&gt; to render a model in game.  
 Use /model scale &lt;amount&gt; to rescale the previously placed model in place.  
+Use /model rotate [x/y/z] [degrees] to rotate the previously placed model.  
+Use /model type [typeId] &lt;typeData&gt; to set the block type to render with.  
 Use /model reset to delete the last model placed.  
 
 # Examples  
-![example](https://thumbs.gfycat.com/LikelyParchedIbex-size_restricted.gif "Model scale example")
-![example](https://thumbs.gfycat.com/OldfashionedWiltedJaguar-size_restricted.gif "Model display example")
-![example](https://thumbs.gfycat.com/FrayedShrillBass-size_restricted.gif "Particle scale example")
+![example](https://thumbs.gfycat.com/ClumsySardonicCalf-size_restricted.gif "Model example")
+![example](http://i.imgur.com/tNVWWxD.jpg "Model of Judy Hopps")
