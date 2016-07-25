@@ -18,4 +18,14 @@ public class FBXPropertyStore {
     public Collection<FBXProperty> getProperties() {
         return properties.values();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (FBXProperty property : properties.values())
+            sb.append(property).append("\n");
+
+        return sb.toString();
+    }
 }

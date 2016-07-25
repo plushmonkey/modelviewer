@@ -1,8 +1,12 @@
 package com.plushnode.modelviewer.fbx;
 
 import com.plushnode.modelviewer.fbx.node.FBXNode;
+import com.plushnode.modelviewer.fbx.node.FBXNodeContainer;
 import com.plushnode.modelviewer.fbx.node.FBXNodeProperty;
 import com.plushnode.modelviewer.fbx.node.FBXNodePropertyType;
+import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
+import com.plushnode.modelviewer.fbx.property.FBXProperty;
+import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
@@ -64,7 +68,7 @@ public class FBXModelLoader {
                 continue;
             }
 
-            Model model = new Model(meshNode);
+            Model model = new Model(meshNode, geometry);
 
             FBXNode vertexNode = geometry.getNode("Vertices");
             if (vertexNode == null) continue;
@@ -88,6 +92,28 @@ public class FBXModelLoader {
             List<Integer> indices = indicesProperties.get(0).getIntList();
 
             List<Face> faces = getFacesFromIndices(indices);
+            FBXNode layerElementNode = geometry.getNode("LayerElementMaterial");
+
+            if (layerElementNode != null) {
+                FBXNode materials = layerElementNode.getNode("Materials");
+                String mapping = geometry.getNode("LayerElementMaterial").getNode("MappingInformationType").getProperty(0).getString();
+                List<Integer> materialIndices = materials.getProperties().get(0).getIntList();
+
+                if (mapping.equalsIgnoreCase("AllSame")) {
+                    int materialIndex = materialIndices.get(materialIndices.get(0));
+
+                    for (int faceIndex = 0; faceIndex < faces.size(); ++faceIndex) {
+
+                        faces.get(faceIndex).setMaterialIndex(materialIndex);
+                    }
+                } else {
+                    for (int faceIndex = 0; faceIndex < faces.size(); ++faceIndex) {
+                        int materialIndex = materialIndices.get(faceIndex);
+
+                        faces.get(faceIndex).setMaterialIndex(materialIndex);
+                    }
+                }
+            }
 
             faces.forEach((Face face) -> model.addFace(face));
 
@@ -95,6 +121,20 @@ public class FBXModelLoader {
         }
 
         return models;
+    }
+
+
+    private static Map<Long, FBXNode> getMaterials(List<FBXNode> materialNodes) {
+        Map<Long, FBXNode> materials = new HashMap<>();
+
+        for (FBXNode node : materialNodes) {
+            List<FBXNodeProperty> nodeProperties = node.getProperties();
+
+            Long id = node.getProperty(0).getLong();
+
+            materials.put(id, node);
+        }
+        return materials;
     }
 
     private static Map<Long, FBXNode> getMeshModels(List<FBXNode> models) {
@@ -145,18 +185,20 @@ public class FBXModelLoader {
         System.out.println(depthStr + node.getName());
 
         if (node.getName().equals("Properties70")) {
-            displayPropertyTypes(node);
-        }
+            FBXPropertyStore store = FBXPropertiesLoader.loadProperties(node);
 
-        for (FBXNode subnode : node.getNodes()) {
-            displayNode(subnode, depth + 1);
-        }
-    }
+            for (FBXProperty prop : store.getProperties()) {
+                System.out.println(depthStr + " *" + prop);
+            }
+            //System.out.println(store);
+        } else {
+            for (FBXNodeProperty prop : node.getProperties()) {
+                System.out.println(depthStr + " *" + prop);
+            }
 
-    private static void displayPropertyTypes(FBXNode node) {
-        System.out.println(node.getName() + " properties:");
-        for (FBXNodeProperty property : node.getProperties()) {
-            System.out.println("-- " + property.getType());
+            for (FBXNode subnode : node.getNodes()) {
+                displayNode(subnode, depth + 1);
+            }
         }
     }
 }

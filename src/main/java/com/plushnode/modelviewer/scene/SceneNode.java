@@ -13,6 +13,11 @@ public class SceneNode {
     private Transform transform;
     private List<SceneNode> children = new ArrayList<>();
     private long id;
+    private List<FBXNode> materials = new ArrayList<>();
+
+    // Material to render with
+    private int typeId = 1;
+    private byte typeData = 4;
 
     public SceneNode(Model model, Transform transform) {
         this.model = model;
@@ -29,12 +34,36 @@ public class SceneNode {
         this.name = name;
     }
 
+    public void addMaterial(FBXNode material) {
+        this.materials.add(material);
+    }
+
+    public FBXNode getMaterial(int index) {
+        return this.materials.get(index);
+    }
+
     public void setId(long id) {
         this.id = id;
     }
 
     public long getId() {
         return id;
+    }
+
+    public void setType(int typeId, byte typeData) {
+        this.typeId = typeId;
+        this.typeData = typeData;
+
+        for (SceneNode child : children)
+            child.setType(typeId, typeData);
+    }
+
+    public int getTypeId() {
+        return this.typeId;
+    }
+
+    public byte getTypeData() {
+        return this.typeData;
     }
 
     public String getName() {

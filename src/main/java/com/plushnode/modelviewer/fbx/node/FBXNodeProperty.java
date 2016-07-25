@@ -70,4 +70,80 @@ public class FBXNodeProperty {
     public String getString() {
         return (String)value;
     }
+
+    @Override
+    public String toString() {
+        switch (this.type) {
+            case SHORT:
+                return getShort().toString();
+            case BOOLEAN:
+                return getBoolean().toString();
+            case INTEGER:
+                return getInt().toString();
+            case FLOAT:
+                return getFloat().toString();
+            case DOUBLE:
+                return getDouble().toString();
+            case LONG:
+                return getLong().toString();
+            case STRING:
+                return getString();
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("[ ");
+
+        switch (this.type) {
+            case FLOAT_LIST: {
+                List<Float> vals = getFloatList();
+                for (int i = 0; i < vals.size(); ++i) {
+                    if (i != 0)
+                        sb.append(", ");
+                    sb.append(vals.get(i));
+                }
+            }
+            break;
+            case DOUBLE_LIST: {
+                List<Double> vals = getDoubleList();
+                for (int i = 0; i < vals.size(); ++i) {
+                    if (i != 0)
+                        sb.append(", ");
+                    sb.append(vals.get(i));
+                }
+            }
+            break;
+            case LONG_LIST: {
+                List<Long> vals = getLongList();
+                for (int i = 0; i < vals.size(); ++i) {
+                    if (i != 0)
+                        sb.append(", ");
+                    sb.append(vals.get(i));
+                }
+            }
+            break;
+            case INTEGER_LIST: {
+                List<Integer> vals = getIntList();
+                for (int i = 0; i < vals.size(); ++i) {
+                    if (i != 0)
+                        sb.append(", ");
+                    sb.append(vals.get(i));
+                }
+            }
+            break;
+            case BYTE_LIST: {
+                List<Byte> vals = getByteList();
+                for (int i = 0; i < vals.size(); ++i) {
+                    if (i != 0)
+                        sb.append(", ");
+                    sb.append((int)vals.get(i));
+                }
+            }
+            break;
+        }
+
+        sb.append(" ]");
+
+        return sb.toString();
+    }
 }

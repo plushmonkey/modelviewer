@@ -8,15 +8,30 @@ import java.util.List;
 
 public class Model {
     private FBXNode node;
+    private FBXNode geometryNode;
     private List<Vector3D> vertices = new ArrayList<>();
     private List<Face> faces = new ArrayList<>();
+    private List<FBXNode> materials = new ArrayList<>();
 
-    public Model(FBXNode node) {
+    public Model(FBXNode node, FBXNode geometry) {
         this.node = node;
+        this.geometryNode = geometry;
+    }
+
+    public void addMaterial(FBXNode material) {
+        this.materials.add(material);
+    }
+
+    public List<FBXNode> getMaterials() {
+        return materials;
     }
 
     public FBXNode getNode() {
         return node;
+    }
+
+    public FBXNode getGeometry() {
+        return geometryNode;
     }
 
     public void addFace(Face face) {

@@ -2,12 +2,16 @@ package com.plushnode.modelviewer.scene;
 
 import com.plushnode.modelviewer.ModelViewerPlugin;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
+import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
+import com.plushnode.modelviewer.fbx.property.FBXProperty;
+import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.fill.PolygonFiller;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
+import com.plushnode.modelviewer.util.ColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -27,8 +31,6 @@ public class BukkitSceneView {
     private Renderer renderer;
     private PolygonFiller filler;
     private Set<Location> affectedBlocks = new HashSet<>();
-    private int typeId = 1;
-    private int typeData = 0;
 
     public BukkitSceneView(ModelViewerPlugin plugin, SceneNode scene, Renderer renderer, PolygonFiller filler) {
         this.plugin = plugin;
@@ -38,8 +40,7 @@ public class BukkitSceneView {
     }
 
     public void setType(int typeId, int typeData) {
-        this.typeId = typeId;
-        this.typeData = typeData;
+        scene.setType(typeId, (byte)typeData);
     }
 
     public SceneNode getScene() {
@@ -87,6 +88,20 @@ public class BukkitSceneView {
             for (int i = 0; i < faces.size(); ++i) {
                 Face face = faces.get(i);
 
+                ColorMatcher.Type type = ColorMatcher.getInstance().getDefaultType();
+
+                int materialIndex = face.getMaterialIndex();
+
+                if (materialIndex >= 0) {
+                    FBXPropertyStore store = FBXPropertiesLoader.loadProperties(node.getMaterial(materialIndex).getNode("Properties70"));
+
+                    FBXProperty diffuseColor = store.getProperty("DiffuseColor");
+
+                    if (diffuseColor != null) {
+                        type = ColorMatcher.getInstance().getTypeFromColor(diffuseColor.getValue().asVector());
+                    }
+                }
+
                 List<Vector3D> faceVertices = new ArrayList<>(face.getSize());
 
                 for (int j = 0; j < face.getSize(); ++j) {
@@ -108,7 +123,7 @@ public class BukkitSceneView {
 
                     affectedBlocks.add(roundedLocation);
 
-                    renderer.renderBlock(roundedLocation, typeId, (byte) typeData);
+                    renderer.renderBlock(roundedLocation, type.id, type.data);
                 }
             }
         }

@@ -8,6 +8,7 @@ import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.scene.SceneCreator;
 import com.plushnode.modelviewer.scene.SceneNode;
 import com.plushnode.modelviewer.scene.Transform;
+import com.plushnode.modelviewer.util.ColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -15,7 +16,7 @@ import java.util.*;
 
 public class FBXSceneCreator implements SceneCreator {
     private FBXDocument document;
-    private Map<Long, Long> connections = new HashMap<>();
+    private Map<Long, List<Long>> connections = new HashMap<>();
 
     public FBXSceneCreator(FBXDocument document) {
         this.document = document;
@@ -26,6 +27,8 @@ public class FBXSceneCreator implements SceneCreator {
         List<Model> models = FBXModelLoader.load(document);
 
         loadConnections();
+        Map<Long, Material> materials = getMaterials();
+
         root.setId(0);
 
         Map<Long, SceneNode> sceneNodeMap = new HashMap<>();
@@ -45,18 +48,95 @@ public class FBXSceneCreator implements SceneCreator {
         }
 
         for (SceneNode node : sceneNodeMap.values()) {
-            Long to = connections.get(node.getId());
+            List<Long> toList = connections.get(node.getId());
 
-            if (to != null) {
-                SceneNode parent = sceneNodeMap.get(to);
+            if (toList == null) continue;
 
-                if (parent != null) {
-                    System.out.println("Formed connection: " + node.getId() + " -> " + parent.getId());
-                    transformNode(node, parent);
-                    parent.addChild(node);
+            for (Long to : toList) {
+                if (to != null) {
+                    SceneNode parent = sceneNodeMap.get(to);
+
+                    if (parent != null) {
+                        System.out.println("Formed connection: " + node.getId() + " -> " + parent.getId());
+                        transformNode(node, parent);
+                        parent.addChild(node);
+                    }
                 }
             }
         }
+
+
+        /*for (Map.Entry<Long, List<Long>> entry : connections.entrySet()) {
+            Long from = entry.getKey();
+            List<Long> toList = entry.getValue();
+
+            Material material = materials.get(from);
+
+            if (material == null) continue;
+
+            for (Long to : toList) {
+                SceneNode node = sceneNodeMap.get(to);
+
+                if (node == null) continue;
+
+                node.addMaterial(material.node);
+
+                System.out.println("Connecting material to " + node.getName());
+                FBXProperty diffuseColorProperty = material.properties.getProperty("DiffuseColor");
+
+                if (diffuseColorProperty == null) continue;
+
+                Vector3D color = diffuseColorProperty.getValue().asVector();
+
+                System.out.println("Color: " + color);
+
+                ColorMatcher.Type type = ColorMatcher.getInstance().getTypeFromColor(color);
+
+                node.setType(type.id, type.data);
+            }
+        }*/
+
+        List<FBXNode> connectionNodes = document.getNode("Connections").getNodes();
+        //Collections.reverse(connectionNodes);
+        for (FBXNode connectionNode : connectionNodes) {
+            Long from = connectionNode.getProperty(1).getLong();
+            Long to = connectionNode.getProperty(2).getLong();
+
+            Material material = materials.get(from);
+            if (material == null) continue;
+
+            SceneNode node = sceneNodeMap.get(to);
+            if (node == null) continue;
+
+            node.addMaterial(material.node);
+        }
+
+        /*for (Material material : materials.values()) {
+            List<Long> toList = connections.get(material.id);
+
+            if (toList == null) continue;
+
+            for (Long to : toList) {
+                SceneNode node = sceneNodeMap.get(to);
+
+                if (node == null) continue;
+
+                node.addMaterial(material.node);
+
+                System.out.println("Connecting material to " + node.getName());
+                FBXProperty diffuseColorProperty = material.properties.getProperty("DiffuseColor");
+
+                if (diffuseColorProperty == null) continue;
+
+                Vector3D color = diffuseColorProperty.getValue().asVector();
+
+                System.out.println("Color: " + color);
+
+                ColorMatcher.Type type = ColorMatcher.getInstance().getTypeFromColor(color);
+
+                node.setType(type.id, type.data);
+            }
+        }*/
 
         return root;
     }
@@ -66,8 +146,28 @@ public class FBXSceneCreator implements SceneCreator {
             Long from = connectionNode.getProperty(1).getLong();
             Long to = connectionNode.getProperty(2).getLong();
 
-            this.connections.put(from, to);
+            List<Long> toList = this.connections.get(from);
+            if (toList == null)
+                toList = new ArrayList<>();
+
+            toList.add(to);
+            this.connections.put(from, toList);
         }
+    }
+
+    private Map<Long, Material> getMaterials() {
+        Map<Long, Material> materials = new HashMap<>();
+        List<FBXNode> materialNodes = document.getNode("Objects").getNodes("Material");
+
+        for (FBXNode node : materialNodes) {
+            FBXNode propertiesNode = node.getNode("Properties70");
+            FBXPropertyStore store = FBXPropertiesLoader.loadProperties(propertiesNode);
+            long id = node.getProperty(0).getLong();
+
+            Material material = new Material(id, node, store);
+            materials.put(id, material);
+        }
+        return materials;
     }
 
     private void transformNode(SceneNode sceneNode, SceneNode parent) {
@@ -114,5 +214,17 @@ public class FBXSceneCreator implements SceneCreator {
         sceneNode.getTransform().rotate(xRot);
         sceneNode.getTransform().rotate(yRot);
         sceneNode.getTransform().rotate(zRot);
+    }
+
+    private class Material {
+        long id;
+        FBXPropertyStore properties;
+        FBXNode node;
+
+        public Material(long id, FBXNode node, FBXPropertyStore properties) {
+            this.id = id;
+            this.node = node;
+            this.properties = properties;
+        }
     }
 }

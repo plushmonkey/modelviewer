@@ -19,7 +19,7 @@ public class FBXPropertiesLoader {
             String type = properties.get(i++).getString();
             String unknown = properties.get(i++).getString();
             String unknown2 = properties.get(i++).getString();
-            AnyType value;
+            AnyType value = null;
 
             switch (type) {
                 case "bool":
@@ -32,6 +32,7 @@ public class FBXPropertiesLoader {
                 case "Lcl Scaling":
                 case "Lcl Rotation":
                 case "Lcl Translation":
+                case "Vector":
                 case "Vector3D":
                 {
                     double value1 = properties.get(i++).getDouble();
@@ -43,19 +44,25 @@ public class FBXPropertiesLoader {
                 break;
                 case "Roll":
                 case "FieldOfView":
+                case "FieldOfViewX":
+                case "FieldOfViewY":
                 case "Number":
                 case "Real":
                 case "Visibility":
+                case "OpticalCenterX":
+                case "OpticalCenterY":
                 case "double":
                 {
                     value = new AnyType(properties.get(i++).getDouble());
                 }
                 break;
-                case "object":
+                case "DateTime":
+                case "KString": // Unicode, I guess
                 {
                     value = new AnyType(properties.get(i++).getString());
                 }
                 break;
+                case "Visibility Inheritance":
                 case "enum":
                 case "int":
                 case "Integer":
@@ -63,11 +70,24 @@ public class FBXPropertiesLoader {
                     value = new AnyType(properties.get(i++).getInt());
                 }
                 break;
+                case "ULongLong":
+                case "KTime":
+                {
+                    value = new AnyType(properties.get(i++).getLong());
+                }
+                break;
+                case "object":
+                case "Compound":
+                {
+                    //return store;
+                }
+                break;
                 default:
                     throw new RuntimeException("Unknown property type " + type + " encountered.");
             }
 
-            store.addProperty(new FBXProperty(name, type, value));
+            if (value != null)
+                store.addProperty(new FBXProperty(name, type, value));
         }
 
         return store;
