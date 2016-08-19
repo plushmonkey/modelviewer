@@ -159,6 +159,8 @@ public class FBXSceneCreator implements SceneCreator {
         Map<Long, Material> materials = new HashMap<>();
         List<FBXNode> materialNodes = document.getNode("Objects").getNodes("Material");
 
+        if (materialNodes == null) return materials;
+
         for (FBXNode node : materialNodes) {
             FBXNode propertiesNode = node.getNode("Properties70");
             FBXPropertyStore store = FBXPropertiesLoader.loadProperties(propertiesNode);

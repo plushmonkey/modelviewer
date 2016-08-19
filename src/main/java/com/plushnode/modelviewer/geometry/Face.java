@@ -1,5 +1,7 @@
 package com.plushnode.modelviewer.geometry;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
 import java.util.ArrayList;
 import java.util.List;
 

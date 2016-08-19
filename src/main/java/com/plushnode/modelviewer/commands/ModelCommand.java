@@ -4,7 +4,7 @@ import com.plushnode.modelviewer.*;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
 import com.plushnode.modelviewer.fbx.FBXDocument;
 import com.plushnode.modelviewer.fbx.FBXSceneCreator;
-import com.plushnode.modelviewer.fill.LinePolygonFiller;
+import com.plushnode.modelviewer.fill.BarycentricConvexPolygonFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
@@ -227,7 +227,7 @@ public class ModelCommand implements CommandExecutor {
                 final long begin = System.currentTimeMillis();
 
                 Renderer renderer = new DeferredRenderer(plugin, 100);
-                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new LinePolygonFiller());
+                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new BarycentricConvexPolygonFiller());
                 view.render(world, () -> {
                     player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
                 });

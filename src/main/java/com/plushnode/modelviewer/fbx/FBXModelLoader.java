@@ -31,6 +31,9 @@ public class FBXModelLoader {
     }
 
     public static List<Model> load(FBXDocument document) {
+        //for (FBXNode node : document.getNodes())
+            //displayNode(node, 0);
+
         FBXNode objectNode = document.getNode("Objects");
         if (objectNode == null) return null;
 
@@ -92,10 +95,10 @@ public class FBXModelLoader {
             List<Integer> indices = indicesProperties.get(0).getIntList();
 
             List<Face> faces = getFacesFromIndices(indices);
-            FBXNode layerElementNode = geometry.getNode("LayerElementMaterial");
+            FBXNode layerMaterialNode = geometry.getNode("LayerElementMaterial");
 
-            if (layerElementNode != null) {
-                FBXNode materials = layerElementNode.getNode("Materials");
+            if (layerMaterialNode != null) {
+                FBXNode materials = layerMaterialNode.getNode("Materials");
                 String mapping = geometry.getNode("LayerElementMaterial").getNode("MappingInformationType").getProperty(0).getString();
                 List<Integer> materialIndices = materials.getProperties().get(0).getIntList();
 

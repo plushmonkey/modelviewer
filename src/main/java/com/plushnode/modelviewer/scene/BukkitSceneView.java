@@ -113,9 +113,9 @@ public class BukkitSceneView {
 
                 for (Vector3D vector : toRender) {
                     Vector3D roundedVector = new Vector3D(
-                            Math.round(vector.getX()),
-                            Math.round(vector.getY()),
-                            Math.round(vector.getZ()));
+                            Math.floor(vector.getX()),
+                            Math.floor(vector.getY()),
+                            Math.floor(vector.getZ()));
 
                     Location roundedLocation = BukkitAdapter.adapt(roundedVector, world);
 
