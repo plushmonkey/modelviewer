@@ -11,6 +11,8 @@ public class ColorMatcher {
     private Type defaultType = new Type(1, (byte)0);
 
     private ColorMatcher() {
+        byte barkOnly = 3 << 2;
+        
         types.put(new Vector3D(0.45490196078431372, 0.45490196078431372, 0.45490196078431372), new Type(1, (byte)0)); // Stone
         types.put(new Vector3D(0.64131994261119085, 0.44184600669536106, 0.36747967479674798), new Type(1, (byte)1)); // Granite
         types.put(new Vector3D(0.62264279624893437, 0.42605285592497871, 0.35345268542199493), new Type(1, (byte)2)); // Polished Granite
@@ -44,10 +46,10 @@ public class ColorMatcher {
         //types.put(new Vector3D(0.45490196078431372, 0.45490196078431372, 0.45490196078431372), new Type(15, (byte)0)); // IronOre
         //types.put(new Vector3D(0.44810996563573885, 0.44810996563573885, 0.44810996563573885), new Type(16, (byte)0)); // CoalOre
 
-        types.put(new Vector3D(0.40862745098039216, 0.3268627450980392, 0.19886274509803922), new Type(17, (byte)0)); // OakWood
-        types.put(new Vector3D(0.078813964610234336, 0.036633189861310381, 0.014155906264945003), new Type(17, (byte)1)); // SpruceWood
-        types.put(new Vector3D(0.91787969425058158, 0.91811232967763379, 0.8910933865071452), new Type(17, (byte)2)); // BirchWood
-        types.put(new Vector3D(0.23484735666418466, 0.18346984363365601, 0.074708364358401586), new Type(17, (byte)3)); // JungleWood
+        types.put(new Vector3D(0.40862745098039216, 0.3268627450980392, 0.19886274509803922), new Type(17, (byte)(0 | barkOnly))); // OakWood
+        types.put(new Vector3D(0.078813964610234336, 0.036633189861310381, 0.014155906264945003), new Type(17, (byte)(1 | barkOnly))); // SpruceWood
+        types.put(new Vector3D(0.91787969425058158, 0.91811232967763379, 0.8910933865071452), new Type(17, (byte)(2 | barkOnly))); // BirchWood
+        types.put(new Vector3D(0.23484735666418466, 0.18346984363365601, 0.074708364358401586), new Type(17, (byte)(3 | barkOnly))); // JungleWood
 
         //types.put(new Vector3D(0.63941176470588235, 0.63878431372549016, 0.6366274509803922), new Type(18, (byte)3)); // JungleLeaves
 
@@ -148,8 +150,8 @@ public class ColorMatcher {
         types.put(new Vector3D(0.55511982570806095, 0.23238925199709515, 0.17966594045025419), new Type(159, (byte)14)); // RedStainedClay
         types.put(new Vector3D(0.14509803921568629, 0.086090686274509803, 0.06145833333333333), new Type(159, (byte)15)); // BlackStainedClay
 
-        types.put(new Vector3D(0.30679100908656148, 0.28660927785748441, 0.25858440937350552), new Type(162, (byte)0)); // AcaciaWood
-        types.put(new Vector3D(0.20858823529411763, 0.16239215686274508, 0.093137254901960786), new Type(162, (byte)1)); // DarkOakWood
+        types.put(new Vector3D(0.30679100908656148, 0.28660927785748441, 0.25858440937350552), new Type(162, (byte)(0 | barkOnly))); // AcaciaWood
+        types.put(new Vector3D(0.20858823529411763, 0.16239215686274508, 0.093137254901960786), new Type(162, (byte)(1 | barkOnly))); // DarkOakWood
 
         types.put(new Vector3D(0.51277480689245392, 0.8160427807486631, 0.43547237076648843), new Type(165, (byte)0)); // Slime
 
