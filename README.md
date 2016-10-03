@@ -12,3 +12,4 @@ Use /model reset to delete the last model placed.
 # Examples  
 ![example](https://thumbs.gfycat.com/ClumsySardonicCalf-size_restricted.gif "Model example")
 ![example](http://i.imgur.com/tNVWWxD.jpg "Model of Judy Hopps")
+![example](https://i.imgur.com/RNsE9hb.jpg "Toad Circuit scene")
