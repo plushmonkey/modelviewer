@@ -25,6 +25,11 @@ public class FBXImageTexture extends FBXObject implements Texture {
         u = u % 1.0f;
         v = v % 1.0f;
 
+        if (u < 0)
+            u += 1.0;
+        if (v < 0)
+            v += 1.0;
+
         u = Math.max(0.0f, Math.min(u, 1.0f));
         v = Math.max(0.0f, Math.min(v, 1.0f));
 
