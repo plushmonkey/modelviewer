@@ -34,15 +34,15 @@ public class ColorMatcher {
         types.put(new Vector3D(0.72941176470588232, 0.40113519091847261, 0.2260061919504644), new Type(5, (byte)4)); // AcaciaPlank
         types.put(new Vector3D(0.28627450980392155, 0.18431372549019609, 0.090196078431372548), new Type(5, (byte)5)); // DarkOakPlank
 
-        types.put(new Vector3D(0.20000000000000001, 0.20000000000000001, 0.20000000000000001), new Type(7, (byte)0)); // Bedrock
+        //types.put(new Vector3D(0.20000000000000001, 0.20000000000000001, 0.20000000000000001), new Type(7, (byte)0)); // Bedrock
 
         //types.put(new Vector3D(0.86487275761368376, 0.83425114726741767, 0.6299123904881101), new Type(12, (byte)0)); // Sand
         //types.put(new Vector3D(0.64143633356957241, 0.32808882589180249, 0.11802504134183794), new Type(12, (byte)1)); // RedSand
 
         //types.put(new Vector3D(0.50544662309368193, 0.49774872912127816, 0.49750665698378121), new Type(13, (byte)0)); // Gravel
-        types.put(new Vector3D(0.52426872388299572, 0.52426872388299572, 0.52426872388299572), new Type(14, (byte)0)); // GoldOre
-        types.put(new Vector3D(0.45490196078431372, 0.45490196078431372, 0.45490196078431372), new Type(15, (byte)0)); // IronOre
-        types.put(new Vector3D(0.44810996563573885, 0.44810996563573885, 0.44810996563573885), new Type(16, (byte)0)); // CoalOre
+        //types.put(new Vector3D(0.52426872388299572, 0.52426872388299572, 0.52426872388299572), new Type(14, (byte)0)); // GoldOre
+        //types.put(new Vector3D(0.45490196078431372, 0.45490196078431372, 0.45490196078431372), new Type(15, (byte)0)); // IronOre
+        //types.put(new Vector3D(0.44810996563573885, 0.44810996563573885, 0.44810996563573885), new Type(16, (byte)0)); // CoalOre
 
         types.put(new Vector3D(0.40862745098039216, 0.3268627450980392, 0.19886274509803922), new Type(17, (byte)0)); // OakWood
         types.put(new Vector3D(0.078813964610234336, 0.036633189861310381, 0.014155906264945003), new Type(17, (byte)1)); // SpruceWood
@@ -56,7 +56,7 @@ public class ColorMatcher {
 
         //types.put(new Vector3D(0.0, 0.0, 0.0), new Type(20, (byte)0)); // Glass
 
-        //types.put(new Vector3D(0.44817927170868349, 0.44817927170868349, 0.44817927170868349), new Type(21, (byte)0)); // LapisOre
+        ////types.put(new Vector3D(0.44817927170868349, 0.44817927170868349, 0.44817927170868349), new Type(21, (byte)0)); // LapisOre
         types.put(new Vector3D(0.15065847234416155, 0.26286215978928884, 0.53064091308165051), new Type(22, (byte)0)); // LapisBlock
 
         types.put(new Vector3D(0.92336134453781515, 0.89098039215686275, 0.72089635854341738), new Type(24, (byte)0)); // Sandstone
@@ -87,7 +87,7 @@ public class ColorMatcher {
 
         //types.put(new Vector3D(0.63597025016903319, 0.63597025016903319, 0.63597025016903319), new Type(43, (byte)0)); // DoubleStoneSlab
 
-        types.put(new Vector3D(0.47323529411764703, 0.26294117647058823, 0.20568627450980392), new Type(45, (byte)0)); // Brick
+        //types.put(new Vector3D(0.47323529411764703, 0.26294117647058823, 0.20568627450980392), new Type(45, (byte)0)); // Brick
 
         types.put(new Vector3D(0.2242467718794835, 0.3573888091822095, 0.2242467718794835), new Type(48, (byte)0)); // MossStone
         types.put(new Vector3D(0.063211026985051447, 0.06309454474859251, 0.10021355076684139), new Type(49, (byte)0)); // Obsidian
@@ -102,7 +102,7 @@ public class ColorMatcher {
 
         //types.put(new Vector3D(0.44810996563573885, 0.44810996563573885, 0.44810996563573885), new Type(73, (byte)0)); // RedstoneOre
 
-        types.put(new Vector3D(0.47143312609596688, 0.66730432010202456, 1.0), new Type(79, (byte)0)); // Ice
+        //types.put(new Vector3D(0.47143312609596688, 0.66730432010202456, 1.0), new Type(79, (byte)0)); // Ice
         types.put(new Vector3D(0.93333333333333335, 1.0, 1.0), new Type(80, (byte)0)); // SnowBlock
 
         types.put(new Vector3D(0.60902433262461608, 0.63283723127805336, 0.67649421214268846), new Type(82, (byte)0)); // ClayBlock
@@ -113,19 +113,19 @@ public class ColorMatcher {
         types.put(new Vector3D(0.40209508460918614, 0.31485361267794792, 0.26016653236637122), new Type(88, (byte)0)); // SoulSand
         //types.put(new Vector3D(0.44705882352941179, 0.43529411764705883, 0.28627450980392155), new Type(89, (byte)0)); // Glowstone
 
-        types.put(new Vector3D(0.5628011204481792, 0.42162464985994402, 0.32750700280112049), new Type(99, (byte)0)); // BrownMushroom
-        types.put(new Vector3D(0.70983297022512715, 0.11375453885257807, 0.10591140159767611), new Type(100, (byte)0)); // RedMushroom
+        //types.put(new Vector3D(0.5628011204481792, 0.42162464985994402, 0.32750700280112049), new Type(99, (byte)0)); // BrownMushroom
+        //types.put(new Vector3D(0.70983297022512715, 0.11375453885257807, 0.10591140159767611), new Type(100, (byte)0)); // RedMushroom
 
-        types.put(new Vector3D(0.7070223438212494, 0.70337437300501593, 0.15740994072047423), new Type(103, (byte)0)); // Melon
+        //types.put(new Vector3D(0.7070223438212494, 0.70337437300501593, 0.15740994072047423), new Type(103, (byte)0)); // Melon
 
         //types.put(new Vector3D(0.41943119590178413, 0.38014485073308601, 0.40332096802685036), new Type(110, (byte)0)); // mycelium
         types.put(new Vector3D(0.18992458521870287, 0.094358974358974362, 0.11046757164404224), new Type(112, (byte)0)); // NetherBrick
         types.put(new Vector3D(0.85509803921568628, 0.8728104575163399, 0.62653594771241838), new Type(121, (byte)0)); // EndStone
 
-        types.put(new Vector3D(0.49431096382214856, 0.49646506489919912, 0.49513946423639882), new Type(129, (byte)0)); // EmeraldOre
+        //types.put(new Vector3D(0.49431096382214856, 0.49646506489919912, 0.49513946423639882), new Type(129, (byte)0)); // EmeraldOre
         types.put(new Vector3D(0.3871936274509804, 0.91158088235294121, 0.53541666666666665), new Type(133, (byte)0)); // EmeraldBlock
 
-        types.put(new Vector3D(0.16862745098039217, 0.77459505541346974, 0.73384484228474001), new Type(138, (byte)0)); // Beacon
+        //types.put(new Vector3D(0.16862745098039217, 0.77459505541346974, 0.73384484228474001), new Type(138, (byte)0)); // Beacon
 
         types.put(new Vector3D(0.47722473604826549, 0.063499245852187039, 0.02393162393162393), new Type(152, (byte)0)); // RedstoneBlock
 

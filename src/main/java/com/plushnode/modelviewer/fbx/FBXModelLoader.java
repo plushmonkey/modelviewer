@@ -9,6 +9,8 @@ import com.plushnode.modelviewer.fbx.property.FBXProperty;
 import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
+import com.plushnode.modelviewer.geometry.Vertex;
+import com.plushnode.modelviewer.scene.Scene;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.ArrayList;
@@ -30,9 +32,9 @@ public class FBXModelLoader {
         System.out.println("------");
     }
 
-    public static List<Model> load(FBXDocument document) {
-        //for (FBXNode node : document.getNodes())
-            //displayNode(node, 0);
+    public static List<Model> load(FBXDocument document, Scene scene) {
+        for (FBXNode node : document.getNodes())
+            displayNode(node, 0);
 
         FBXNode objectNode = document.getNode("Objects");
         if (objectNode == null) return null;
@@ -71,7 +73,9 @@ public class FBXModelLoader {
                 continue;
             }
 
-            Model model = new Model(meshNode, geometry);
+            Long modelId = meshNode.getProperty(0).getLong();
+            String name = meshNode.getProperty(1).getString();
+            Model model = new Model(name);
 
             FBXNode vertexNode = geometry.getNode("Vertices");
             if (vertexNode == null) continue;
@@ -79,22 +83,46 @@ public class FBXModelLoader {
             FBXNode indicesNode = geometry.getNode("PolygonVertexIndex");
             if (indicesNode == null) continue;
 
+            FBXNode uvLayer = geometry.getNode("LayerElementUV");
+            FBXNode uvNode = null;
+            FBXNode uvIndicesNode = null;
+
+            if (uvLayer != null) {
+                uvNode = uvLayer.getNode("UV");
+                uvIndicesNode = uvLayer.getNode("UVIndex");
+            }
+
+            if (uvNode != null) {
+                List<Double> uvs = uvNode.getProperties().get(0).getDoubleList();
+
+                for (int j = 0; j < uvs.size() - 1; j += 2)
+                    model.addUV(uvs.get(j), uvs.get(j + 1));
+            }
+
             List<FBXNodeProperty> vertexProperties = vertexNode.getProperties();
             if (vertexProperties.isEmpty() || vertexProperties.get(0).getType() != FBXNodePropertyType.DOUBLE_LIST)
                 continue;
 
             List<Double> verticesList = vertexProperties.get(0).getDoubleList();
 
-            for (int j = 0; j < verticesList.size(); j += 3)
-                model.addVertex(new Vector3D(verticesList.get(j), verticesList.get(j + 1), verticesList.get(j + 2)));
+            for (int j = 0; j < verticesList.size(); j += 3) {
+                Vector3D position = new Vector3D(verticesList.get(j), verticesList.get(j + 1), verticesList.get(j + 2));
+                Vertex vertex = new Vertex(position);
+
+                model.addVertex(vertex);
+            }
 
             List<FBXNodeProperty> indicesProperties = indicesNode.getProperties();
             if (indicesProperties.isEmpty() || indicesProperties.get(0).getType() != FBXNodePropertyType.INTEGER_LIST)
                 continue;
 
             List<Integer> indices = indicesProperties.get(0).getIntList();
+            List<Integer> uvIndices = null;
 
-            List<Face> faces = getFacesFromIndices(indices);
+            if (uvIndicesNode != null)
+                uvIndices = uvIndicesNode.getProperties().get(0).getIntList();
+
+            List<Face> faces = getFacesFromIndices(indices, uvIndices);
             FBXNode layerMaterialNode = geometry.getNode("LayerElementMaterial");
 
             if (layerMaterialNode != null) {
@@ -120,7 +148,21 @@ public class FBXModelLoader {
 
             faces.forEach((Face face) -> model.addFace(face));
 
+            FBXPropertyStore modelPropertyStore = FBXPropertiesLoader.loadProperties(meshNode.getNode("Properties70"));
+
+            FBXProperty translation = modelPropertyStore.getProperty("Lcl Translation");
+            FBXProperty rotation = modelPropertyStore.getProperty("Lcl Rotation");
+            FBXProperty scaling = modelPropertyStore.getProperty("Lcl Scaling");
+
+            if (translation != null)
+                model.setTranslation(translation.getValue().asVector());
+            if (rotation != null)
+                model.setRotation(rotation.getValue().asVector());
+            if (scaling != null)
+                model.setScale(scaling.getValue().asVector());
+
             models.add(model);
+            scene.addModel(modelId, model);
         }
 
         return models;
@@ -156,12 +198,16 @@ public class FBXModelLoader {
         return meshes;
     }
 
-    private static List<Face> getFacesFromIndices(List<Integer> indices) {
+    private static List<Face> getFacesFromIndices(List<Integer> indices, List<Integer> uvIndices) {
         List<Face> faces = new ArrayList<>();
         Face face = new Face();
 
         for (int i = 0; i < indices.size(); ++i) {
             int index = indices.get(i);
+
+            if (uvIndices != null)
+                face.addUvIndex(uvIndices.get(i));
+
             if (index < 0) {
                 face.addIndex(~index);
                 faces.add(face);
@@ -180,6 +226,7 @@ public class FBXModelLoader {
             sb.append('-');
         return sb.toString();
     }
+
     private static void displayNode(FBXNode node, int depth) {
         if (node == null) return;
 

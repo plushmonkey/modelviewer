@@ -219,15 +219,15 @@ public class ModelCommand implements CommandExecutor {
 
                 SceneCreator sceneCreator = new FBXSceneCreator(document);
 
-                SceneNode scene = sceneCreator.createScene();
+                Scene scene = sceneCreator.createScene();
 
-                translateScene(scene, position, direction);
-                scene.getTransform().setScale(scale);
+                translateScene(scene.getRootNode(), position, direction);
+                scene.getRootNode().getTransform().setScale(scale);
 
                 final long begin = System.currentTimeMillis();
 
                 Renderer renderer = new DeferredRenderer(plugin, 100);
-                BukkitSceneView view = new BukkitSceneView(plugin, scene, renderer, new BarycentricConvexPolygonFiller());
+                BukkitSceneView view = new BukkitSceneView(plugin, scene.getRootNode(), renderer, new BarycentricConvexPolygonFiller());
                 view.render(world, () -> {
                     player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
                 });

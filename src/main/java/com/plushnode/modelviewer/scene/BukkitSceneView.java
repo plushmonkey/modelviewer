@@ -2,17 +2,17 @@ package com.plushnode.modelviewer.scene;
 
 import com.plushnode.modelviewer.ModelViewerPlugin;
 import com.plushnode.modelviewer.adapters.BukkitAdapter;
-import com.plushnode.modelviewer.fbx.property.FBXPropertiesLoader;
-import com.plushnode.modelviewer.fbx.property.FBXProperty;
-import com.plushnode.modelviewer.fbx.property.FBXPropertyStore;
 import com.plushnode.modelviewer.fill.PolygonFiller;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
+import com.plushnode.modelviewer.geometry.Vertex;
+import com.plushnode.modelviewer.material.Texture;
 import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.util.ColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.bukkit.Location;
@@ -75,14 +75,14 @@ public class BukkitSceneView {
 
         if (model != null) {
             List<Face> faces = model.getFaces();
-            List<Vector3D> vertices = model.getVertices();
+            List<Vertex> vertices = model.getVertices();
 
             List<Vector3D> transformedVertices = new ArrayList<>(vertices.size());
 
             for (int i = 0; i < vertices.size(); ++i) {
-                Vector3D vertex = vertices.get(i);
-                vertex = VectorUtils.multiply(resultTransform, vertex);
-                transformedVertices.add(vertex);
+                Vector3D position = vertices.get(i).getPosition();
+                position = VectorUtils.multiply(resultTransform, position);
+                transformedVertices.add(position);
             }
 
             for (int i = 0; i < faces.size(); ++i) {
@@ -90,16 +90,20 @@ public class BukkitSceneView {
 
                 ColorMatcher.Type type = ColorMatcher.getInstance().getDefaultType();
 
-                int materialIndex = face.getMaterialIndex();
+                //int materialIndex = face.getMaterialIndex();
+                int materialIndex = 0;
+                int blockId = 1;
+                byte blockData = 0;
 
                 if (materialIndex >= 0) {
-                    FBXPropertyStore store = FBXPropertiesLoader.loadProperties(node.getMaterial(materialIndex).getNode("Properties70"));
+                    com.plushnode.modelviewer.material.Material material = node.getMaterial(materialIndex);
+                    /*FBXPropertyStore store = FBXPropertiesLoader.loadProperties(node.getMaterial(materialIndex).getNode("Properties70"));
 
-                    FBXProperty diffuseColor = store.getProperty("DiffuseColor");
+                    FBXProperty diffuseColor = store.getProperty("DiffuseColor");*/
 
-                    if (diffuseColor != null) {
-                        type = ColorMatcher.getInstance().getTypeFromColor(diffuseColor.getValue().asVector());
-                    }
+                    type = ColorMatcher.getInstance().getTypeFromColor(material.getDiffuseColor());
+                    blockId = type.id;
+                    blockData = type.data;
                 }
 
                 List<Vector3D> faceVertices = new ArrayList<>(face.getSize());
@@ -109,8 +113,17 @@ public class BukkitSceneView {
                     faceVertices.add(vertex);
                 }
 
-                Set<Vector3D> toRender = filler.fill(faceVertices);
+                List<Integer> uvIndices = face.getUvIndices();
+                List<Vector2D> faceUVs = new ArrayList<>();
 
+                if (!model.getUVs().isEmpty() && uvIndices != null && !uvIndices.isEmpty()) {
+                    for (int j = 0; j < face.getSize(); ++j) {
+                        Vector2D uv = model.getUVs().get(uvIndices.get(j));
+                        faceUVs.add(uv);
+                    }
+                }
+
+                Set<Vector3D> toRender = filler.fill(faceVertices);
                 for (Vector3D vector : toRender) {
                     Vector3D roundedVector = new Vector3D(
                             Math.floor(vector.getX()),
@@ -118,18 +131,83 @@ public class BukkitSceneView {
                             Math.floor(vector.getZ()));
 
                     Location roundedLocation = BukkitAdapter.adapt(roundedVector, world);
-
                     if (affectedBlocks.contains(roundedLocation)) continue;
-
                     affectedBlocks.add(roundedLocation);
 
-                    renderer.renderBlock(roundedLocation, type.id, type.data);
+                    if (!faceUVs.isEmpty()) {
+                        List<Double> weights = computeBarycentricWeights(vector, faceVertices);
+                        Vector2D result = new Vector2D(0, 0);
+
+                        for (int j = 0; j < faceUVs.size(); ++j) {
+                            Vector2D weightedUV = faceUVs.get(j);
+                            weightedUV = weightedUV.scalarMultiply(weights.get(j));
+                            result = result.add(weightedUV);
+                        }
+
+                        com.plushnode.modelviewer.material.Material material = node.getMaterial(face.getMaterialIndex());
+                        Texture texture = material.getTexture();
+
+                        //BufferedImage texture = TextureManager.getInstance().getTexture();
+
+                        Vector3D sampledColor = texture.sample(result.getX(), result.getY());
+
+                        type = ColorMatcher.getInstance().getTypeFromColor(sampledColor);
+
+                        blockId = type.id;
+                        blockData = type.data;
+                    }
+
+                    renderer.renderBlock(roundedLocation, blockId, blockData);
                 }
             }
         }
 
         for (SceneNode subNode : node.getChildren())
             renderNode(world, subNode, resultTransform);
+    }
+
+    private List<Double> computeBarycentricWeights(Vector3D p, List<Vector3D> vertices) {
+        List<Double> weights = new ArrayList<>();
+        double weightSum = 0;
+        int n = vertices.size();
+
+        for (int i = 0; i < n; ++i) {
+            Vector3D curr = vertices.get(i);
+            Vector3D prev = vertices.get((i + n - 1) % n);
+            Vector3D next = vertices.get((i + 1) % n);
+
+            double norm = p.subtract(curr).getNorm();
+
+            double weight;
+            double epsilon = 0.05;
+
+            double c1 = prev.subtract(curr).crossProduct(p.subtract(curr)).getNorm();
+            double c2 = next.subtract(curr).crossProduct(p.subtract(curr)).getNorm();
+
+            if (next.subtract(curr).crossProduct(p.subtract(curr)).getNorm() <= epsilon * next.subtract(curr).getNorm() || c1 == 0.0 || c2 == 0.0) {
+                weight = p.distance(prev) / next.distance(prev);
+            } else {
+                double cot1 = cotangent(p, curr, prev);
+                double cot2 = cotangent(p, curr, next);
+
+                weight = (cot1 + cot2) / (norm * norm);
+            }
+
+            weights.add(weight);
+            weightSum += weight;
+        }
+
+        for (int i = 0; i < weights.size(); ++i)
+            weights.set(i, weights.get(i) / weightSum);
+
+        return weights;
+    }
+
+    private double cotangent(Vector3D a, Vector3D b, Vector3D c) {
+        Vector3D ba = a.subtract(b);
+        Vector3D bc = c.subtract(b);
+
+        return ba.dotProduct(bc) / bc.crossProduct(ba).getNorm();
     }
 
     public void render(World world, RenderCallback callback) {

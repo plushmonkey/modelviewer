@@ -1,7 +1,7 @@
 package com.plushnode.modelviewer.scene;
 
-import com.plushnode.modelviewer.fbx.node.FBXNode;
 import com.plushnode.modelviewer.geometry.Model;
+import com.plushnode.modelviewer.material.Material;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ public class SceneNode {
     private Transform transform;
     private List<SceneNode> children = new ArrayList<>();
     private long id;
-    private List<FBXNode> materials = new ArrayList<>();
+    private List<Material> materials = new ArrayList<>();
 
     // Material to render with
     private int typeId = 1;
@@ -23,9 +23,7 @@ public class SceneNode {
         this.model = model;
         this.transform = transform;
 
-        FBXNode node = this.model.getNode();
-
-        this.name = node.getProperties().get(1).getString();
+        this.name = this.model.getName();
     }
 
     public SceneNode(String name, Model model, Transform transform) {
@@ -34,11 +32,11 @@ public class SceneNode {
         this.name = name;
     }
 
-    public void addMaterial(FBXNode material) {
+    public void addMaterial(Material material) {
         this.materials.add(material);
     }
 
-    public FBXNode getMaterial(int index) {
+    public Material getMaterial(int index) {
         return this.materials.get(index);
     }
 

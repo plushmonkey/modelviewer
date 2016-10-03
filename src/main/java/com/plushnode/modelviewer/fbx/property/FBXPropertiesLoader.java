@@ -10,9 +10,11 @@ import java.util.List;
 
 public class FBXPropertiesLoader {
     public static FBXPropertyStore loadProperties(FBXNode properties70) {
-        List<FBXNodeProperty> properties = getAllNodeProperties(properties70);
-
         FBXPropertyStore store = new FBXPropertyStore();
+
+        if (properties70 == null) return store;
+
+        List<FBXNodeProperty> properties = getAllNodeProperties(properties70);
 
         for (int i = 0; i < properties.size(); ) {
             String name = properties.get(i++).getString();
