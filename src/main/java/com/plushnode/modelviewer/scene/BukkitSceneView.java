@@ -148,13 +148,14 @@ public class BukkitSceneView {
                         Texture texture = material.getTexture();
 
                         //BufferedImage texture = TextureManager.getInstance().getTexture();
+                        if (texture != null) {
+                            Vector3D sampledColor = texture.sample(result.getX(), result.getY());
 
-                        Vector3D sampledColor = texture.sample(result.getX(), result.getY());
+                            type = ColorMatcher.getInstance().getTypeFromColor(sampledColor);
 
-                        type = ColorMatcher.getInstance().getTypeFromColor(sampledColor);
-
-                        blockId = type.id;
-                        blockData = type.data;
+                            blockId = type.id;
+                            blockData = type.data;
+                        }
                     }
 
                     renderer.renderBlock(roundedLocation, blockId, blockData);
