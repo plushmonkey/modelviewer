@@ -8,8 +8,11 @@ import com.plushnode.modelviewer.fill.BarycentricConvexPolygonFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
+import com.plushnode.modelviewer.util.ClayColorMatcher;
+import com.plushnode.modelviewer.util.BlockColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -82,6 +85,7 @@ public class ModelCommand implements CommandExecutor {
         }
 
         view.setType(type, data);
+        view.setColorMatcher(new BlockColorMatcher(type, (byte)data));
         view.clear();
         Player player = (Player)commandSender;
         final String setString = "Model type set to " + type + ":" + data + ".";
@@ -228,6 +232,27 @@ public class ModelCommand implements CommandExecutor {
 
                 Renderer renderer = new DeferredRenderer(plugin, 100);
                 BukkitSceneView view = new BukkitSceneView(plugin, scene.getRootNode(), renderer, new BarycentricConvexPolygonFiller());
+
+                if (args.length > 3) {
+                    if (args[3].startsWith("-c")) {
+                        view.setColorMatcher(new ClayColorMatcher());
+                    } else if (args[3].startsWith("-s")) {
+                        int id = 1;
+                        byte data = 0;
+
+                        if (args.length > 4) {
+                            String[] tokens = args[4].split(":");
+
+                            id = Integer.parseInt(tokens[0]);
+
+                            if (tokens.length > 1) {
+                                data = Byte.parseByte(tokens[1]);
+                            }
+                        }
+                        view.setColorMatcher(new BlockColorMatcher(id, data));
+                    }
+                }
+
                 view.render(world, () -> {
                     player.sendMessage("Rendered in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
                 });

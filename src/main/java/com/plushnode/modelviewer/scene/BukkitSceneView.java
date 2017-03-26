@@ -11,6 +11,8 @@ import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.util.ColorMatcher;
+import com.plushnode.modelviewer.util.ColorType;
+import com.plushnode.modelviewer.util.DefaultColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -31,12 +33,17 @@ public class BukkitSceneView {
     private Renderer renderer;
     private PolygonFiller filler;
     private Set<Location> affectedBlocks = new HashSet<>();
+    private ColorMatcher colorMatcher = new DefaultColorMatcher();
 
     public BukkitSceneView(ModelViewerPlugin plugin, SceneNode scene, Renderer renderer, PolygonFiller filler) {
         this.plugin = plugin;
         this.scene = scene;
         this.renderer = renderer;
         this.filler = filler;
+    }
+
+    public void setColorMatcher(ColorMatcher matcher) {
+        this.colorMatcher = matcher;
     }
 
     public void setType(int typeId, int typeData) {
@@ -88,7 +95,7 @@ public class BukkitSceneView {
             for (int i = 0; i < faces.size(); ++i) {
                 Face face = faces.get(i);
 
-                ColorMatcher.Type type = ColorMatcher.getInstance().getDefaultType();
+                ColorType type;
 
                 int materialIndex = face.getMaterialIndex();
                 int blockId = 1;
@@ -96,11 +103,8 @@ public class BukkitSceneView {
 
                 if (materialIndex >= 0) {
                     com.plushnode.modelviewer.material.Material material = node.getMaterial(materialIndex);
-                    /*FBXPropertyStore store = FBXPropertiesLoader.loadProperties(node.getMaterial(materialIndex).getNode("Properties70"));
 
-                    FBXProperty diffuseColor = store.getProperty("DiffuseColor");*/
-
-                    type = ColorMatcher.getInstance().getTypeFromColor(material.getDiffuseColor());
+                    type = colorMatcher.getTypeFromColor(material.getDiffuseColor());
                     blockId = type.id;
                     blockData = type.data;
                 }
@@ -150,7 +154,7 @@ public class BukkitSceneView {
                         if (texture != null) {
                             Vector3D sampledColor = texture.sample(result.getX(), result.getY());
 
-                            type = ColorMatcher.getInstance().getTypeFromColor(sampledColor);
+                            type = colorMatcher.getTypeFromColor(sampledColor);
 
                             blockId = type.id;
                             blockData = type.data;

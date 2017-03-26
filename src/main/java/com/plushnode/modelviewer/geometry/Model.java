@@ -54,7 +54,6 @@ public class Model {
 
     public void addUV(double u, double v) {
         this.uvs.add(new Vector2D(u, v));
-        System.out.println("Adding UV (" + u + ", " + v + ") to model.");
     }
 
     public List<Vector2D> getUVs() {

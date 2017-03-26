@@ -33,9 +33,6 @@ public class FBXModelLoader {
     }
 
     public static List<Model> load(FBXDocument document, Scene scene) {
-        for (FBXNode node : document.getNodes())
-            displayNode(node, 0);
-
         FBXNode objectNode = document.getNode("Objects");
         if (objectNode == null) return null;
 
