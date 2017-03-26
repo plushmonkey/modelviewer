@@ -90,8 +90,7 @@ public class BukkitSceneView {
 
                 ColorMatcher.Type type = ColorMatcher.getInstance().getDefaultType();
 
-                //int materialIndex = face.getMaterialIndex();
-                int materialIndex = 0;
+                int materialIndex = face.getMaterialIndex();
                 int blockId = 1;
                 byte blockData = 0;
 
