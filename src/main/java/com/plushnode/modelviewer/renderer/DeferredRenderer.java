@@ -1,6 +1,7 @@
 package com.plushnode.modelviewer.renderer;
 
 import com.plushnode.modelviewer.ModelViewerPlugin;
+import com.plushnode.modelviewer.util.NativeMethods;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -52,8 +53,10 @@ public class DeferredRenderer implements Renderer {
                 return;
 
             if (current.type != null) {
+                //NativeMethods.setBlockFast(current.location.getBlock(), current.type.getId(), 0, false);
                 current.location.getBlock().setType(current.type, false);
             } else {
+                //NativeMethods.setBlockFast(current.location.getBlock(), current.typeId, current.typeData, false);
                 current.location.getBlock().setTypeIdAndData(current.typeId, current.typeData, false);
             }
         }

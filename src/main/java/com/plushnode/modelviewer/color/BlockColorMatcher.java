@@ -1,4 +1,4 @@
-package com.plushnode.modelviewer.util;
+package com.plushnode.modelviewer.color;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 

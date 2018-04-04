@@ -6,13 +6,15 @@ import com.plushnode.modelviewer.fill.PolygonFiller;
 import com.plushnode.modelviewer.geometry.Face;
 import com.plushnode.modelviewer.geometry.Model;
 import com.plushnode.modelviewer.geometry.Vertex;
+import com.plushnode.modelviewer.material.BilinearFilter;
 import com.plushnode.modelviewer.material.Texture;
+import com.plushnode.modelviewer.material.TextureFilter;
 import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
-import com.plushnode.modelviewer.util.ColorMatcher;
-import com.plushnode.modelviewer.util.ColorType;
-import com.plushnode.modelviewer.util.DefaultColorMatcher;
+import com.plushnode.modelviewer.color.ColorMatcher;
+import com.plushnode.modelviewer.color.ColorType;
+import com.plushnode.modelviewer.color.DefaultColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -101,7 +103,7 @@ public class BukkitSceneView {
                 int blockId = 1;
                 byte blockData = 0;
 
-                if (materialIndex >= 0) {
+                if (materialIndex >= 0 && node.getMaterialSize() > materialIndex) {
                     com.plushnode.modelviewer.material.Material material = node.getMaterial(materialIndex);
 
                     type = colorMatcher.getTypeFromColor(material.getDiffuseColor());
@@ -152,7 +154,8 @@ public class BukkitSceneView {
 
                         //BufferedImage texture = TextureManager.getInstance().getTexture();
                         if (texture != null) {
-                            Vector3D sampledColor = texture.sample(result.getX(), result.getY());
+                            TextureFilter filter = new BilinearFilter();
+                            Vector3D sampledColor = filter.sample(texture, result.getX(), result.getY());
 
                             type = colorMatcher.getTypeFromColor(sampledColor);
 

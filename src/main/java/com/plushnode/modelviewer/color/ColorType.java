@@ -1,4 +1,4 @@
-package com.plushnode.modelviewer.util;
+package com.plushnode.modelviewer.color;
 
 public class ColorType {
     public int id;

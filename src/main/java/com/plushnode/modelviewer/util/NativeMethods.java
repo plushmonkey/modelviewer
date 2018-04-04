@@ -4,32 +4,61 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NativeMethods {
-    private static NativeMethods instance;
-    private Class<?> CraftWorld, World, BlockPosition, Block, Chunk, IBlockData;
-    private Method getHandle, getChunkAt, getByCombinedId, a, notify;
-    private boolean blockDataNotify = false;
+    private static Class<?> CraftWorld, World, BlockPosition, NMSBlock, Chunk, ChunkSection, IBlockData;
+    private static Constructor<?> blockPositionConstructor, chunkSectionConstructor;
+    private static Method getHandle, getChunkAt, getByCombinedId, a, notify, setType, getType, getFlag, initLighting, chunkO;
+    private static Field sections, worldProviderField;
+    private static boolean blockDataNotify = false, enabled = false;
+    private static Set<Object> chunkLightingSet = new HashSet<>();
+    private static Queue<Object> chunkLightingQueue = new LinkedBlockingQueue<>();
 
-    private NativeMethods() {
+    static {
         try {
             setupReflection();
+            enabled = true;
+            System.out.println("NativeMethods setup for ModelViewerPlugin.");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
     }
 
-    public static NativeMethods getInstance() {
-        if (instance == null) {
-            instance = new NativeMethods();
+    public static boolean lightChunk() {
+        if (!chunkLightingSet.isEmpty()) {
+            chunkLightingQueue.addAll(chunkLightingSet);
+            chunkLightingSet.clear();
         }
-        return instance;
+
+        if (chunkLightingQueue.isEmpty()) {
+            return false;
+        }
+
+        Object chunk = chunkLightingQueue.poll();
+        try {
+            initLighting.invoke(chunk);
+            chunkO.invoke(chunk);
+        } catch (IllegalAccessException|InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
+        return true;
     }
 
-    public boolean setBlockFast(Block block, int typeId, int data) {
+    public static boolean setBlockFast(Block block, int typeId, int data, boolean notification) {
+        if (!enabled) return false;
+
+        if (block.getLocation().getY() < 0 || block.getLocation().getY() > 255) return true;
+
         Location location = block.getLocation();
 
         try {
@@ -38,40 +67,98 @@ public class NativeMethods {
 
             Object world = getHandle.invoke(CraftWorld.cast(block.getWorld()));
             Object chunk = getChunkAt.invoke(world, x, z);
-            Constructor<?> blockPositionConstructor = BlockPosition.getConstructor(int.class, int.class, int.class);
             Object blockPosition = blockPositionConstructor.newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
             int fullData = typeId + (data << 12);
-            Object newBlock = getByCombinedId.invoke(null, fullData);
+            Object blockData = getByCombinedId.invoke(null, fullData);
 
-            Object oldBlock = a.invoke(chunk, blockPosition, newBlock);
-            if (blockDataNotify) {
-                int flag = 0;
-                notify.invoke(world, blockPosition, oldBlock, newBlock, flag);
-            } else {
-                notify.invoke(world, blockPosition);
+            Object[] chunkSections = (Object[])sections.get(chunk);
+
+            if (chunkSections == null) {
+                return false;
+            }
+
+            Object chunkSection = chunkSections[location.getBlockY() >> 4];
+
+            if (chunkSection == null) {
+                Object worldProvider = worldProviderField.get(world);
+                boolean flag = (Boolean)getFlag.invoke(worldProvider);
+
+                int yPos = (location.getBlockY() >> 4) << 4;
+                chunkSection = chunkSectionConstructor.newInstance(yPos, flag);
+                chunkSections[location.getBlockY() >> 4] = chunkSection;
+            }
+
+            chunkLightingSet.add(chunk);
+
+            int sectionX = location.getBlockX() & 15;
+            int sectionY = location.getBlockY() & 15;
+            int sectionZ = location.getBlockZ() & 15;
+
+            Object oldBlockData = getType.invoke(chunkSection, sectionX, sectionY, sectionZ);
+
+            setType.invoke(chunkSection, sectionX, sectionY, sectionZ, blockData);
+
+            if (notification) {
+                if (blockDataNotify) {
+                    int flag = 0;
+                    notify.invoke(world, blockPosition, oldBlockData, blockData, flag);
+                } else {
+                    notify.invoke(world, blockPosition);
+                }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
 
         return true;
     }
 
-    private void setupReflection() throws NoSuchMethodException {
+    private static void setupReflection() throws NoSuchMethodException {
         CraftWorld = getNMSClass("org.bukkit.craftbukkit.%s.CraftWorld");
         World = getNMSClass("net.minecraft.server.%s.World");
         BlockPosition = getNMSClass("net.minecraft.server.%s.BlockPosition");
-        Block = getNMSClass("net.minecraft.server.%s.Block");
+        NMSBlock = getNMSClass("net.minecraft.server.%s.Block");
         IBlockData = getNMSClass("net.minecraft.server.%s.IBlockData");
         Chunk = getNMSClass("net.minecraft.server.%s.Chunk");
+        ChunkSection = getNMSClass("net.minecraft.server.%s.ChunkSection");
+
+        blockPositionConstructor = BlockPosition.getConstructor(int.class, int.class, int.class);
+        chunkSectionConstructor = ChunkSection.getConstructor(int.class, boolean.class);
+
         getHandle = CraftWorld.getDeclaredMethod("getHandle");
         getChunkAt = World.getDeclaredMethod("getChunkAt", int.class, int.class);
-        getByCombinedId = Block.getDeclaredMethod("getByCombinedId", int.class);
+        getByCombinedId = NMSBlock.getDeclaredMethod("getByCombinedId", int.class);
         a = Chunk.getDeclaredMethod("a", BlockPosition, IBlockData);
+        setType = ChunkSection.getDeclaredMethod("setType", int.class, int.class, int.class, IBlockData);
+        getType = ChunkSection.getDeclaredMethod("getType", int.class, int.class, int.class);
+
+        initLighting = Chunk.getDeclaredMethod("initLighting");
+        chunkO = Chunk.getDeclaredMethod("o");
+
+        Class<?> WorldProvider = getNMSClass("net.minecraft.server.%s.WorldProvider");
+        if (WorldProvider != null) {
+            getFlag = WorldProvider.getDeclaredMethod("m");
+        }
+
+        try {
+            sections = Chunk.getDeclaredField("sections");
+            sections.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            worldProviderField = World.getDeclaredField("worldProvider");
+            worldProviderField.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
 
         try {
             notify = World.getDeclaredMethod("notify", BlockPosition);
+
         } catch (NoSuchMethodException e) {
             notify = null;
         }
@@ -82,7 +169,7 @@ public class NativeMethods {
         }
     }
 
-    private Class<?> getNMSClass(String nmsClass) {
+    private static Class<?> getNMSClass(String nmsClass) {
         String version = null;
 
         Pattern pattern = Pattern.compile("net\\.minecraft\\.(?:server)?\\.(v(?:\\d+_)+R\\d)");

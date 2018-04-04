@@ -8,11 +8,11 @@ import com.plushnode.modelviewer.fill.BarycentricConvexPolygonFiller;
 import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
-import com.plushnode.modelviewer.util.ClayColorMatcher;
-import com.plushnode.modelviewer.util.BlockColorMatcher;
+import com.plushnode.modelviewer.color.ClayColorMatcher;
+import com.plushnode.modelviewer.color.BlockColorMatcher;
+import com.plushnode.modelviewer.color.SolidColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -169,7 +169,9 @@ public class ModelCommand implements CommandExecutor {
         final long begin = System.currentTimeMillis();
 
         view.render(player.getWorld(), () -> {
-            commandSender.sendMessage("Model scale set to " + view.getScene().getTransform().getScale() + " in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)");
+            String message = "Model scale set to " + view.getScene().getTransform().getScale() + " in " + (System.currentTimeMillis() - begin) + "ms. (" + view.getBlockCount() + " blocks)";
+            commandSender.sendMessage(message);
+            System.out.println(message);
         });
     }
 
@@ -230,12 +232,14 @@ public class ModelCommand implements CommandExecutor {
 
                 final long begin = System.currentTimeMillis();
 
-                Renderer renderer = new DeferredRenderer(plugin, 100);
+                Renderer renderer = new DeferredRenderer(plugin, 1000);
                 BukkitSceneView view = new BukkitSceneView(plugin, scene.getRootNode(), renderer, new BarycentricConvexPolygonFiller());
 
                 if (args.length > 3) {
                     if (args[3].startsWith("-c")) {
                         view.setColorMatcher(new ClayColorMatcher());
+                    } else if (args[3].startsWith("-f")) {
+                        view.setColorMatcher(new SolidColorMatcher());
                     } else if (args[3].startsWith("-s")) {
                         int id = 1;
                         byte data = 0;

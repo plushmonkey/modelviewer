@@ -40,6 +40,10 @@ public class SceneNode {
         return this.materials.get(index);
     }
 
+    public int getMaterialSize() {
+        return this.materials.size();
+    }
+
     public void setId(long id) {
         this.id = id;
     }

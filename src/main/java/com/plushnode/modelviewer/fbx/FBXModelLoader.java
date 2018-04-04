@@ -36,6 +36,8 @@ public class FBXModelLoader {
         FBXNode objectNode = document.getNode("Objects");
         if (objectNode == null) return null;
 
+        //displayNode(objectNode, 0);
+
         List<FBXNode> geometryNodes = objectNode.getNodes("Geometry");
         Map<Long, FBXNode> meshNodes = getMeshModels(objectNode.getNodes("Model"));
 
