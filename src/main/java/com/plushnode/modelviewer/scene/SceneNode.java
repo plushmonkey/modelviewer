@@ -15,10 +15,6 @@ public class SceneNode {
     private long id;
     private List<Material> materials = new ArrayList<>();
 
-    // Material to render with
-    private int typeId = 1;
-    private byte typeData = 4;
-
     public SceneNode(Model model, Transform transform) {
         this.model = model;
         this.transform = transform;
@@ -50,22 +46,6 @@ public class SceneNode {
 
     public long getId() {
         return id;
-    }
-
-    public void setType(int typeId, byte typeData) {
-        this.typeId = typeId;
-        this.typeData = typeData;
-
-        for (SceneNode child : children)
-            child.setType(typeId, typeData);
-    }
-
-    public int getTypeId() {
-        return this.typeId;
-    }
-
-    public byte getTypeData() {
-        return this.typeData;
     }
 
     public String getName() {

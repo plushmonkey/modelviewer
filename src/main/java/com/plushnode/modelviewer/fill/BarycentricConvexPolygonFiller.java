@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 // Triangulates a set of vertices and interpolates using barycentric coordinates
 public class BarycentricConvexPolygonFiller implements PolygonFiller {
     @Override
-    public Set<Vector3D> fill(List<Vector3D> vertices) {
-        Set<Vector3D> result = new HashSet<>();
-        if (vertices.size() < 3) return result;
+    public void fill(List<Vector3D> vertices, Consumer<Vector3D> callback) {
+        if (vertices.size() < 3) return;
 
         List<Triangle> triangles;
 
@@ -39,13 +39,11 @@ public class BarycentricConvexPolygonFiller implements PolygonFiller {
                         Vector3D wCA = cVertex.subtract(aVertex).scalarMultiply(w);
                         Vector3D point = aVertex.add(vBA).add(wCA);
 
-                        result.add(point);
+                        callback.accept(point);
                     }
                 }
             }
         }
-
-        return result;
     }
 
     private double GetInterpolationJump(Vector3D first, Vector3D second) {

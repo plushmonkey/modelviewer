@@ -1,7 +1,17 @@
+buildscript {
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
+	}
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'idea'
 apply plugin: 'java'
 
-version = '0.3'
+version = '0.4'
 
 compileJava {
 	sourceCompatibility = '1.8'
@@ -9,6 +19,8 @@ compileJava {
 
 repositories {
 	mavenCentral()
+	maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+	maven { url = "https://oss.sonatype.org/content/repositories/snapshots/" }
 	flatDir {
 		dirs 'libs'
 	}
@@ -31,24 +43,27 @@ processResources {
 	}
 }
 
+shadowJar {
+	configurations = [project.configurations.shadow]
+
+	relocate "org.apache", "com.plushnode.modelviewer.internal.apache"
+
+	classifier = null
+}
+
 jar {
 	manifest {
 		attributes 'Implementation-Title': project.name,
 		           'Implementation-Version': project.version
 	}
-	from {
-		(configurations.runtime - configurations.provided).collect { it.isDirectory() ? it : zipTree(it) }
-	}
 }
 
-configurations {
-	provided
-	compile.extendsFrom provided
-}
 
 dependencies {
-	provided name: 'spigot-api-1.10-R0.1-SNAPSHOT'
-	compile 'org.apache.commons:commons-math3:3.5'
+	compile 'org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT'
+	shadow 'org.apache.commons:commons-math3:3.5'
 }
+
+build.dependsOn shadowJar
 
 buildDir = 'bin'

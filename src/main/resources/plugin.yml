@@ -2,6 +2,7 @@ name: ${name}
 author: plushmonkey
 version: ${version}
 main: com.plushnode.modelviewer.ModelViewerPlugin
+api-version: 1.13
 commands:
   model:
     usage: /<command>

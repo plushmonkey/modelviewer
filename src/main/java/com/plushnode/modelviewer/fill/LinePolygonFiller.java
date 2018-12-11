@@ -5,6 +5,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class LinePolygonFiller implements PolygonFiller {
     private LineAlgorithm algorithm;
@@ -18,10 +19,8 @@ public class LinePolygonFiller implements PolygonFiller {
     }
 
     @Override
-    public Set<Vector3D> fill(List<Vector3D> vertices) {
-        Set<Vector3D> result = new HashSet<>();
-
-        if (vertices.isEmpty()) return result;
+    public void fill(List<Vector3D> vertices, Consumer<Vector3D> callback) {
+        if (vertices.isEmpty()) return;
 
         Vector3D pivot = vertices.get(0);
 
@@ -36,11 +35,10 @@ public class LinePolygonFiller implements PolygonFiller {
             for (double j = 0; j <= dist; j += jump) {
                 Vector3D interpolated = current.add(currentToNext.scalarMultiply(j / dist));
                 Set<Vector3D> linePoints = algorithm.draw(pivot, interpolated);
-                result.addAll(linePoints);
+
+                linePoints.forEach(callback);
             }
         }
-
-        return result;
     }
 
     private double getJump(Vector3D vertexA, Vector3D vertexB, Vector3D vertexC) {

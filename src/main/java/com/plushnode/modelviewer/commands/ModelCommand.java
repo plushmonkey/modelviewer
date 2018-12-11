@@ -9,10 +9,11 @@ import com.plushnode.modelviewer.renderer.DeferredRenderer;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.scene.*;
 import com.plushnode.modelviewer.color.ClayColorMatcher;
-import com.plushnode.modelviewer.color.BlockColorMatcher;
+import com.plushnode.modelviewer.color.StaticMaterialMatcher;
 import com.plushnode.modelviewer.color.SolidColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -54,7 +55,7 @@ public class ModelCommand implements CommandExecutor {
 
     private void handleType(CommandSender commandSender, String[] args) {
         if (args.length < 2) {
-            commandSender.sendMessage("/model type [id] <data>");
+            commandSender.sendMessage("/model type [materialName]");
             return;
         }
 
@@ -67,28 +68,19 @@ public class ModelCommand implements CommandExecutor {
         if (!(commandSender instanceof Player))
             return;
 
-        int type;
+        Material type;
 
         try {
-            type = Integer.parseInt(args[1]);
-        } catch (NumberFormatException e) {
-            commandSender.sendMessage("Failed to parse type id. It must be an integer.");
+            type = Material.valueOf(args[1]);
+        } catch (IllegalArgumentException e) {
+            commandSender.sendMessage("Failed to parse type.");
             return;
         }
 
-        int data = 0;
-        if (args.length > 2) {
-            try {
-                data = Integer.parseInt(args[2]);
-            } catch (NumberFormatException e) {
-            }
-        }
-
-        view.setType(type, data);
-        view.setColorMatcher(new BlockColorMatcher(type, (byte)data));
+        view.setColorMatcher(new StaticMaterialMatcher(type));
         view.clear();
         Player player = (Player)commandSender;
-        final String setString = "Model type set to " + type + ":" + data + ".";
+        final String setString = "Model type set to " + type + ".";
         view.render(player.getWorld(), () -> {
             commandSender.sendMessage(setString);
         });
@@ -241,19 +233,16 @@ public class ModelCommand implements CommandExecutor {
                     } else if (args[3].startsWith("-f")) {
                         view.setColorMatcher(new SolidColorMatcher());
                     } else if (args[3].startsWith("-s")) {
-                        int id = 1;
-                        byte data = 0;
+                        Material type = Material.STONE;
 
                         if (args.length > 4) {
-                            String[] tokens = args[4].split(":");
-
-                            id = Integer.parseInt(tokens[0]);
-
-                            if (tokens.length > 1) {
-                                data = Byte.parseByte(tokens[1]);
+                            try {
+                                type = Material.valueOf(args[4]);
+                            } catch (IllegalArgumentException e) {
+                                //
                             }
                         }
-                        view.setColorMatcher(new BlockColorMatcher(id, data));
+                        view.setColorMatcher(new StaticMaterialMatcher(type));
                     }
                 }
 

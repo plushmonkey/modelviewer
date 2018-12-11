@@ -13,7 +13,6 @@ import com.plushnode.modelviewer.math.VectorUtils;
 import com.plushnode.modelviewer.renderer.RenderCallback;
 import com.plushnode.modelviewer.renderer.Renderer;
 import com.plushnode.modelviewer.color.ColorMatcher;
-import com.plushnode.modelviewer.color.ColorType;
 import com.plushnode.modelviewer.color.DefaultColorMatcher;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -46,10 +45,6 @@ public class BukkitSceneView {
 
     public void setColorMatcher(ColorMatcher matcher) {
         this.colorMatcher = matcher;
-    }
-
-    public void setType(int typeId, int typeData) {
-        scene.setType(typeId, (byte)typeData);
     }
 
     public SceneNode getScene() {
@@ -97,18 +92,16 @@ public class BukkitSceneView {
             for (int i = 0; i < faces.size(); ++i) {
                 Face face = faces.get(i);
 
-                ColorType type;
+                final Material fallbackType;
 
                 int materialIndex = face.getMaterialIndex();
-                int blockId = 1;
-                byte blockData = 0;
 
                 if (materialIndex >= 0 && node.getMaterialSize() > materialIndex) {
                     com.plushnode.modelviewer.material.Material material = node.getMaterial(materialIndex);
 
-                    type = colorMatcher.getTypeFromColor(material.getDiffuseColor());
-                    blockId = type.id;
-                    blockData = type.data;
+                    fallbackType = colorMatcher.getTypeFromColor(material.getDiffuseColor());
+                } else {
+                    fallbackType = Material.STONE;
                 }
 
                 List<Vector3D> faceVertices = new ArrayList<>(face.getSize());
@@ -128,15 +121,15 @@ public class BukkitSceneView {
                     }
                 }
 
-                Set<Vector3D> toRender = filler.fill(faceVertices);
-                for (Vector3D vector : toRender) {
+                filler.fill(faceVertices, vector -> {
                     Vector3D roundedVector = new Vector3D(
                             Math.floor(vector.getX()),
                             Math.floor(vector.getY()),
                             Math.floor(vector.getZ()));
+                    Material type = fallbackType;
 
                     Location roundedLocation = BukkitAdapter.adapt(roundedVector, world);
-                    if (affectedBlocks.contains(roundedLocation)) continue;
+                    if (affectedBlocks.contains(roundedLocation)) return;
                     affectedBlocks.add(roundedLocation);
 
                     if (!faceUVs.isEmpty()) {
@@ -158,14 +151,11 @@ public class BukkitSceneView {
                             Vector3D sampledColor = filter.sample(texture, result.getX(), result.getY());
 
                             type = colorMatcher.getTypeFromColor(sampledColor);
-
-                            blockId = type.id;
-                            blockData = type.data;
                         }
                     }
 
-                    renderer.renderBlock(roundedLocation, blockId, blockData);
-                }
+                    renderer.renderBlock(roundedLocation, type);
+                });
             }
         }
 

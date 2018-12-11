@@ -36,11 +36,6 @@ public class DeferredRenderer implements Renderer {
         renderQueue.add(new RenderLocation(location, type));
     }
 
-    @Override
-    public void renderBlock(Location location, int typeId, byte typeData) {
-        renderQueue.add(new RenderLocation(location, typeId, typeData));
-    }
-
     public void addCallback(RenderCallback callback) {
         this.callbacks.add(callback);
     }
@@ -55,28 +50,17 @@ public class DeferredRenderer implements Renderer {
             if (current.type != null) {
                 //NativeMethods.setBlockFast(current.location.getBlock(), current.type.getId(), 0, false);
                 current.location.getBlock().setType(current.type, false);
-            } else {
-                //NativeMethods.setBlockFast(current.location.getBlock(), current.typeId, current.typeData, false);
-                current.location.getBlock().setTypeIdAndData(current.typeId, current.typeData, false);
             }
         }
     }
 
     private class RenderLocation {
         Location location;
-        Material type = null;
-        int typeId;
-        byte typeData;
+        Material type;
 
         RenderLocation(Location location, Material type) {
             this.location = location;
             this.type = type;
-        }
-
-        RenderLocation(Location location, int typeId, byte typeData) {
-            this.location = location;
-            this.typeId = typeId;
-            this.typeData = typeData;
         }
     }
 }
